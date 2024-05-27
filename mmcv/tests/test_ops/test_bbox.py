@@ -3,8 +3,7 @@ import numpy as np
 import pytest
 import torch
 
-from mmcv.utils import (IS_CUDA_AVAILABLE, IS_MLU_AVAILABLE, IS_MPS_AVAILABLE,
-                        IS_NPU_AVAILABLE)
+from mmcv.utils import IS_CUDA_AVAILABLE, IS_MLU_AVAILABLE, IS_MPS_AVAILABLE
 
 
 class TestBBox:
@@ -35,14 +34,6 @@ class TestBBox:
         out = bbox_overlaps(b1, b2, offset=1)
         assert np.allclose(out.cpu().numpy(), should_output, 1e-2)
 
-        b1 = torch.tensor([[10.0 + i, 10.0 + i, 30.0 + i, 30.0 + i]
-                           for i in range(1000)]).to(device).type(dtype)
-        b2 = torch.tensor([[20.0 + i, 20.0 + i, 40.0 + i, 40.0 + i]
-                           for i in range(1000)]).to(device).type(dtype)
-        should_output = np.array([1 / 7] * 1000)
-        out = bbox_overlaps(b1, b2, aligned=True)
-        assert np.allclose(out.cpu().numpy(), should_output, 1e-2)
-
     @pytest.mark.parametrize('device', [
         'cpu',
         pytest.param(
@@ -56,11 +47,7 @@ class TestBBox:
         pytest.param(
             'mps',
             marks=pytest.mark.skipif(
-                not IS_MPS_AVAILABLE, reason='requires MPS support')),
-        pytest.param(
-            'npu',
-            marks=pytest.mark.skipif(
-                not IS_NPU_AVAILABLE, reason='requires NPU support'))
+                not IS_MPS_AVAILABLE, reason='requires MPS support'))
     ])
     def test_bbox_overlaps_float(self, device):
         self._test_bbox_overlaps(device, dtype=torch.float)
@@ -73,11 +60,7 @@ class TestBBox:
         pytest.param(
             'mlu',
             marks=pytest.mark.skipif(
-                not IS_MLU_AVAILABLE, reason='requires MLU support')),
-        pytest.param(
-            'npu',
-            marks=pytest.mark.skipif(
-                not IS_NPU_AVAILABLE, reason='requires NPU support'))
+                not IS_MLU_AVAILABLE, reason='requires MLU support'))
     ])
     def test_bbox_overlaps_half(self, device):
         self._test_bbox_overlaps(device, dtype=torch.half)

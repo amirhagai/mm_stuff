@@ -4,12 +4,12 @@ We implement common ops used in detection, segmentation, etc.
 
 | Device                       | CPU | CUDA | MLU | MPS | Ascend |
 | ---------------------------- | --- | ---- | --- | --- | ------ |
-| ActiveRotatedFilter          | √   | √    |     |     | √      |
+| ActiveRotatedFilter          | √   | √    |     |     |        |
 | AssignScoreWithK             |     | √    |     |     |        |
-| BallQuery                    |     | √    | √   |     |        |
-| BBoxOverlaps                 |     | √    | √   | √   | √      |
+| BallQuery                    |     | √    |     |     |        |
+| BBoxOverlaps                 |     | √    | √   | √   |        |
 | BorderAlign                  |     | √    |     |     |        |
-| BoxIouRotated                | √   | √    | √   |     |        |
+| BoxIouRotated                | √   | √    |     |     |        |
 | BoxIouQuadri                 | √   | √    |     |     |        |
 | CARAFE                       |     | √    | √   |     |        |
 | ChamferDistance              |     | √    |     |     |        |
@@ -25,7 +25,7 @@ We implement common ops used in detection, segmentation, etc.
 | FurthestPointSample          |     | √    |     |     |        |
 | FurthestPointSampleWithDist  |     | √    |     |     |        |
 | FusedBiasLeakyrelu           |     | √    |     |     | √      |
-| GatherPoints                 |     | √    |     |     | √      |
+| GatherPoints                 |     | √    |     |     |        |
 | GroupPoints                  |     | √    |     |     |        |
 | Iou3d                        |     | √    | √   |     |        |
 | KNN                          |     | √    |     |     |        |
@@ -35,32 +35,29 @@ We implement common ops used in detection, segmentation, etc.
 | ModulatedDeformConv2d        | √   | √    |     |     | √      |
 | MultiScaleDeformableAttn     |     | √    | √   |     |        |
 | NMS                          | √   | √    | √   |     | √      |
-| NMSRotated                   | √   | √    | √   |     | √      |
+| NMSRotated                   | √   | √    |     |     |        |
 | NMSQuadri                    | √   | √    |     |     |        |
 | PixelGroup                   | √   |      |     |     |        |
 | PointsInBoxes                | √   | √    |     |     |        |
 | PointsInPolygons             |     | √    |     |     |        |
 | PSAMask                      | √   | √    | √   |     | √      |
-| RotatedFeatureAlign          | √   | √    | √   |     |        |
+| RotatedFeatureAlign          | √   | √    |     |     |        |
 | RoIPointPool3d               |     | √    | √   |     |        |
 | RoIPool                      |     | √    | √   |     | √      |
 | RoIAlignRotated              | √   | √    | √   |     |        |
 | RiRoIAlignRotated            |     | √    |     |     |        |
-| RoIAlign                     | √   | √    | √   |     | √      |
+| RoIAlign                     | √   | √    | √   |     |        |
 | RoIAwarePool3d               |     | √    | √   |     |        |
 | SAConv2d                     |     | √    |     |     |        |
 | SigmoidFocalLoss             |     | √    | √   |     | √      |
 | SoftmaxFocalLoss             |     | √    |     |     | √      |
 | SoftNMS                      |     | √    |     |     |        |
-| Sparse Convolution           |     | √    | √   |     |        |
+| Sparse Convolution           |     | √    |     |     |        |
 | Synchronized BatchNorm       |     | √    |     |     |        |
 | ThreeInterpolate             |     | √    |     |     |        |
 | ThreeNN                      |     | √    | √   |     |        |
 | TINShift                     |     | √    | √   |     |        |
 | UpFirDn2d                    |     | √    |     |     |        |
-| Voxelization                 | √   | √    | √   |     | √      |
+| Voxelization                 | √   | √    |     |     |        |
 | PrRoIPool                    |     | √    |     |     |        |
 | BezierAlign                  | √   | √    |     |     |        |
-| BiasAct                      |     | √    |     |     |        |
-| FilteredLrelu                |     | √    |     |     |        |
-| Conv2dGradfix                |     | √    |     |     |        |

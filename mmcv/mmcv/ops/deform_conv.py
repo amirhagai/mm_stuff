@@ -57,8 +57,7 @@ class DeformConv2dFunction(Function):
                 input_tensor, grad_output, offset_out, weight, offset_all,
                 kernel_size=[weight.shape[3], weight.shape[2]],
                 stride=[1, 1, ctx.stride[0], ctx.stride[1]],
-                padding=[ctx.padding[0], ctx.padding[0], ctx.padding[1],
-                         ctx.padding[1]],
+                padding=[1, 1, ctx.padding[0], ctx.padding[1]],
                 dilation=[1, 1, ctx.dilation[0], ctx.dilation[1]],
                 groups=ctx.groups, deformable_groups=ctx.deform_groups,
                 modulated=True)
@@ -109,10 +108,8 @@ class DeformConv2dFunction(Function):
             return output
         ctx.save_for_backward(input, offset, weight)
 
-        output = input.new_empty([
-            int(i)
-            for i in DeformConv2dFunction._output_size(ctx, input, weight)
-        ])
+        output = input.new_empty(
+            DeformConv2dFunction._output_size(ctx, input, weight))
 
         ctx.bufs_ = [input.new_empty(0), input.new_empty(0)]  # columns, ones
 

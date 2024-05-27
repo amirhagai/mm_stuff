@@ -36,7 +36,6 @@ except ImportError:
             pass
 
 
-@TRANSFORMS.register_module()
 class Compose(BaseTransform):
     """Compose multiple transforms sequentially.
 

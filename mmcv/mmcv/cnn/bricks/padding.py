@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import inspect
 from typing import Dict
 
 import torch.nn as nn
@@ -28,8 +27,7 @@ def build_padding_layer(cfg: Dict, *args, **kwargs) -> nn.Module:
 
     cfg_ = cfg.copy()
     padding_type = cfg_.pop('type')
-    if inspect.isclass(padding_type):
-        return padding_type(*args, **kwargs, **cfg_)
+
     # Switch registry to the target scope. If `padding_layer` cannot be found
     # in the registry, fallback to search `padding_layer` in the
     # mmengine.MODELS.
