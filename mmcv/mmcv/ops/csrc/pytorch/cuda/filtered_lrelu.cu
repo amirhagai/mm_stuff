@@ -1678,7 +1678,7 @@ std::tuple<torch::Tensor, torch::Tensor, int> filtered_lrelu_op(
   int maxSharedBytes = 0;
 #ifdef MMCV_WITH_HIP
   cudaDeviceGetAttribute(&maxSharedBytes,
-                         hipDeviceAttributeMaxSharedMemoryPerBlock,
+                         hipDeviceAttributeSharedMemPerBlockOptin,
                          x.device().index());
 #else
   AT_CUDA_CHECK(cudaDeviceGetAttribute(&maxSharedBytes,

@@ -10,7 +10,6 @@ You can switch between Chinese and English documents in the lower-left corner of
    get_started/introduction.md
    get_started/installation.md
    get_started/build.md
-   get_started/api_reference.md
 
 .. toctree::
    :maxdepth: 2

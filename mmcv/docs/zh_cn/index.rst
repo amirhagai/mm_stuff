@@ -11,7 +11,6 @@
    get_started/installation.md
    get_started/build.md
    get_started/article.md
-   get_started/api_reference.md
 
 .. toctree::
    :maxdepth: 2

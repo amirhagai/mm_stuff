@@ -31,11 +31,8 @@ def points_in_polygons(points: Tensor, polygons: Tensor) -> Tensor:
     assert polygons.shape[1] == 8, \
         'polygons dimension should be 8, ' \
         f'but got unexpected shape {polygons.shape[1]}'
-    output = torch.zeros(
-        points.shape[0],
-        polygons.shape[0],
-        dtype=torch.float32,
-        device=points.device)
+    output = torch.full([points.shape[0], polygons.shape[0]],
+                        0.).cuda().float()
     ext_module.points_in_polygons_forward(points.contiguous(),
                                           polygons.contiguous(), output)
     return output
