@@ -466,7 +466,7 @@ class RTMDetInsHead(RTMDetHead):
             results.bboxes = scale_boxes(results.bboxes, scale_factor)
 
         if hasattr(results, 'score_factors'):
-            # TODO: Add sqrt operation in order to be consistent with
+            # TODO： Add sqrt operation in order to be consistent with
             #  the paper.
             score_factors = results.pop('score_factors')
             results.scores = results.scores * score_factors
@@ -565,7 +565,7 @@ class RTMDetInsHead(RTMDetHead):
             mask_feat.unsqueeze(0)
 
         coord = self.prior_generator.single_level_grid_priors(
-            (h, w), level_idx=0, device=mask_feat.device).reshape(1, -1, 2)
+            (h, w), level_idx=0).reshape(1, -1, 2)
         num_inst = priors.shape[0]
         points = priors[:, :2].reshape(-1, 1, 2)
         strides = priors[:, 2:].reshape(-1, 1, 2)

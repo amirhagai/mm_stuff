@@ -55,7 +55,7 @@ Optional arguments:
 Assuming that you have already downloaded the checkpoints to the directory `checkpoints/`.
 
 1. Test RTMDet and visualize the results. Press any key for the next image.
-   Config and checkpoint files are available [here](https://github.com/open-mmlab/mmdetection/tree/main/configs/rtmdet).
+   Config and checkpoint files are available [here](https://github.com/open-mmlab/mmdetection/tree/3.x/configs/rtmdet).
 
    ```shell
    python tools/test.py \
@@ -65,7 +65,7 @@ Assuming that you have already downloaded the checkpoints to the directory `chec
    ```
 
 2. Test RTMDet and save the painted images for future visualization.
-   Config and checkpoint files are available [here](https://github.com/open-mmlab/mmdetection/tree/main/configs/rtmdet).
+   Config and checkpoint files are available [here](https://github.com/open-mmlab/mmdetection/tree/3.x/configs/rtmdet).
 
    ```shell
    python tools/test.py \
@@ -79,7 +79,7 @@ Assuming that you have already downloaded the checkpoints to the directory `chec
 
    ```shell
    python tools/test.py \
-       configs/pascal_voc/faster-rcnn_r50_fpn_1x_voc0712.py \
+       configs/pascal_voc/faster_rcnn_r50_fpn_1x_voc.py \
        checkpoints/faster_rcnn_r50_fpn_1x_voc0712_20200624-c9895d40.pth
    ```
 
@@ -138,7 +138,7 @@ Assuming that you have already downloaded the checkpoints to the directory `chec
 
 MMDetection supports to test models without ground-truth annotations using `CocoDataset`. If your dataset format is not in COCO format, please convert them to COCO format. For example, if your dataset format is VOC, you can directly convert it to COCO format by the [script in tools.](../../../tools/dataset_converters/pascal_voc.py) If your dataset format is Cityscapes, you can directly convert it to COCO format by the [script in tools.](../../../tools/dataset_converters/cityscapes.py) The rest of the formats can be converted using [this script](../../../tools/dataset_converters/images2coco.py).
 
-```shell
+```shel
 python tools/dataset_converters/images2coco.py \
     ${IMG_PATH} \
     ${CLASSES} \
@@ -146,7 +146,7 @@ python tools/dataset_converters/images2coco.py \
     [--exclude-extensions]
 ```
 
-arguments:
+arguments：
 
 - `IMG_PATH`: The root path of images.
 - `CLASSES`: The text file with a list of categories.
@@ -219,7 +219,7 @@ tta_model = dict(
 
 tta_pipeline = [
     dict(type='LoadImageFromFile',
-        backend_args=None),
+        file_client_args=dict(backend='disk')),
     dict(
         type='TestTimeAug',
         transforms=[[
@@ -274,7 +274,7 @@ tta_model = dict(
 img_scales = [(1333, 800), (666, 400), (2000, 1200)]
 tta_pipeline = [
     dict(type='LoadImageFromFile',
-         backend_args=None),
+        file_client_args=dict(backend='disk')),
     dict(
         type='TestTimeAug',
         transforms=[[

@@ -27,7 +27,7 @@ class DetTTAModel(BaseTTAModel):
         >>>
         >>> tta_pipeline = [
         >>>     dict(type='LoadImageFromFile',
-        >>>          backend_args=None),
+        >>>          file_client_args=dict(backend='disk')),
         >>>     dict(
         >>>         type='TestTimeAug',
         >>>         transforms=[[

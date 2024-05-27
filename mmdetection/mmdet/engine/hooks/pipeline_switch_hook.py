@@ -18,13 +18,12 @@ class PipelineSwitchHook(Hook):
         self.switch_epoch = switch_epoch
         self.switch_pipeline = switch_pipeline
         self._restart_dataloader = False
-        self._has_switched = False
 
     def before_train_epoch(self, runner):
         """switch pipeline."""
         epoch = runner.epoch
         train_loader = runner.train_dataloader
-        if epoch >= self.switch_epoch and not self._has_switched:
+        if epoch == self.switch_epoch:
             runner.logger.info('Switch pipeline now!')
             # The dataset pipeline cannot be updated when persistent_workers
             # is True, so we need to force the dataloader's multi-process
@@ -35,7 +34,7 @@ class PipelineSwitchHook(Hook):
                 train_loader._DataLoader__initialized = False
                 train_loader._iterator = None
                 self._restart_dataloader = True
-            self._has_switched = True
+
         else:
             # Once the restart is complete, we need to restore
             # the initialization flag.

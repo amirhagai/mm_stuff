@@ -90,7 +90,9 @@ model = dict(
 
 # dataset settings
 train_pipeline = [
-    dict(type='LoadImageFromFile', backend_args={{_base_.backend_args}}),
+    dict(
+        type='LoadImageFromFile',
+        file_client_args={{_base_.file_client_args}}),
     dict(type='LoadAnnotations', with_bbox=True),
     dict(
         type='RandomResize',
@@ -101,7 +103,9 @@ train_pipeline = [
     dict(type='PackDetInputs')
 ]
 test_pipeline = [
-    dict(type='LoadImageFromFile', backend_args={{_base_.backend_args}}),
+    dict(
+        type='LoadImageFromFile',
+        file_client_args={{_base_.file_client_args}}),
     dict(type='Resize', scale=(2000, 1200), keep_ratio=True, backend='pillow'),
     dict(type='LoadAnnotations', with_bbox=True),
     dict(
@@ -120,8 +124,7 @@ train_dataloader = dict(
             ann_file='annotations/instances_train2017.json',
             data_prefix=dict(img='train2017/'),
             filter_cfg=dict(filter_empty_gt=True, min_size=32),
-            pipeline=train_pipeline,
-            backend_args={{_base_.backend_args}})))
+            pipeline=train_pipeline)))
 val_dataloader = dict(dataset=dict(pipeline=test_pipeline))
 test_dataloader = val_dataloader
 

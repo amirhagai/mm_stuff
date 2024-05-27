@@ -17,7 +17,10 @@ class TestSingleStageInstanceSegmentor(TestCase):
 
     @parameterized.expand([
         'solo/solo_r50_fpn_1x_coco.py',
+        'solo/decoupled-solo_r50_fpn_1x_coco.py',
+        'solo/decoupled-solo-light_r50_fpn_3x_coco.py',
         'solov2/solov2_r50_fpn_1x_coco.py',
+        'solov2/solov2-light_r18_fpn_ms-3x_coco.py',
         'yolact/yolact_r50_1xb8-55e_coco.py',
     ])
     def test_init(self, cfg_file):
@@ -34,6 +37,9 @@ class TestSingleStageInstanceSegmentor(TestCase):
 
     @parameterized.expand([
         ('solo/solo_r50_fpn_1x_coco.py', ('cpu', 'cuda')),
+        ('solo/decoupled-solo_r50_fpn_1x_coco.py', ('cpu', 'cuda')),
+        ('solo/decoupled-solo-light_r50_fpn_3x_coco.py', ('cpu', 'cuda')),
+        ('solov2/solov2_r50_fpn_1x_coco.py', ('cpu', 'cuda')),
         ('solov2/solov2-light_r18_fpn_ms-3x_coco.py', ('cpu', 'cuda')),
         ('yolact/yolact_r50_1xb8-55e_coco.py', ('cpu', 'cuda')),
     ])
@@ -63,7 +69,11 @@ class TestSingleStageInstanceSegmentor(TestCase):
             self.assertIsInstance(losses, dict)
 
     @parameterized.expand([
+        ('solo/solo_r50_fpn_1x_coco.py', ('cpu', 'cuda')),
+        ('solo/decoupled-solo_r50_fpn_1x_coco.py', ('cpu', 'cuda')),
         ('solo/decoupled-solo-light_r50_fpn_3x_coco.py', ('cpu', 'cuda')),
+        ('solov2/solov2_r50_fpn_1x_coco.py', ('cpu', 'cuda')),
+        ('solov2/solov2-light_r18_fpn_ms-3x_coco.py', ('cpu', 'cuda')),
         ('yolact/yolact_r50_1xb8-55e_coco.py', ('cpu', 'cuda')),
     ])
     def test_single_stage_forward_predict_mode(self, cfg_file, devices):
@@ -96,7 +106,10 @@ class TestSingleStageInstanceSegmentor(TestCase):
 
     @parameterized.expand([
         ('solo/solo_r50_fpn_1x_coco.py', ('cpu', 'cuda')),
+        ('solo/decoupled-solo_r50_fpn_1x_coco.py', ('cpu', 'cuda')),
+        ('solo/decoupled-solo-light_r50_fpn_3x_coco.py', ('cpu', 'cuda')),
         ('solov2/solov2_r50_fpn_1x_coco.py', ('cpu', 'cuda')),
+        ('solov2/solov2-light_r18_fpn_ms-3x_coco.py', ('cpu', 'cuda')),
         ('yolact/yolact_r50_1xb8-55e_coco.py', ('cpu', 'cuda')),
     ])
     def test_single_stage_forward_tensor_mode(self, cfg_file, devices):

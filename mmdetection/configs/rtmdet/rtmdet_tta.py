@@ -4,7 +4,7 @@ tta_model = dict(
 
 img_scales = [(640, 640), (320, 320), (960, 960)]
 tta_pipeline = [
-    dict(type='LoadImageFromFile', backend_args=None),
+    dict(type='LoadImageFromFile', file_client_args=dict(backend='disk')),
     dict(
         type='TestTimeAug',
         transforms=[
@@ -25,7 +25,6 @@ tta_pipeline = [
                     size=(960, 960),
                     pad_val=dict(img=(114, 114, 114))),
             ],
-            [dict(type='LoadAnnotations', with_bbox=True)],
             [
                 dict(
                     type='PackDetInputs',

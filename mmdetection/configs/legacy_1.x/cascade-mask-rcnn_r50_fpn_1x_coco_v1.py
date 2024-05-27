@@ -76,3 +76,4 @@ model = dict(
                 output_size=14,
                 sampling_ratio=2,
                 aligned=False))))
+dist_params = dict(backend='nccl', port=29515)

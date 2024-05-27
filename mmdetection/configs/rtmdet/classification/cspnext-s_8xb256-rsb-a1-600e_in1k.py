@@ -1,7 +1,7 @@
 _base_ = [
-    'mmpretrain::_base_/datasets/imagenet_bs256_rsb_a12.py',
-    'mmpretrain::_base_/schedules/imagenet_bs2048_rsb.py',
-    'mmpretrain::_base_/default_runtime.py'
+    'mmcls::_base_/datasets/imagenet_bs256_rsb_a12.py',
+    'mmcls::_base_/schedules/imagenet_bs2048_rsb.py',
+    'mmcls::_base_/default_runtime.py'
 ]
 
 model = dict(

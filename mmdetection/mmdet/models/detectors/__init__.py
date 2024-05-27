@@ -13,7 +13,6 @@ from .crowddet import CrowdDet
 from .d2_wrapper import Detectron2Wrapper
 from .dab_detr import DABDETR
 from .ddod import DDOD
-from .ddq_detr import DDQDETR
 from .deformable_detr import DeformableDETR
 from .detr import DETR
 from .dino import DINO
@@ -23,9 +22,7 @@ from .fcos import FCOS
 from .fovea import FOVEA
 from .fsaf import FSAF
 from .gfl import GFL
-from .glip import GLIP
 from .grid_rcnn import GridRCNN
-from .grounding_dino import GroundingDINO
 from .htc import HybridTaskCascade
 from .kd_one_stage import KnowledgeDistillationSingleStageDetector
 from .lad import LAD
@@ -70,6 +67,5 @@ __all__ = [
     'TwoStagePanopticSegmentor', 'PanopticFPN', 'QueryInst', 'LAD', 'TOOD',
     'MaskFormer', 'DDOD', 'Mask2Former', 'SemiBaseDetector', 'SoftTeacher',
     'RTMDet', 'Detectron2Wrapper', 'CrowdDet', 'CondInst', 'BoxInst',
-    'DetectionTransformer', 'ConditionalDETR', 'DINO', 'DABDETR', 'GLIP',
-    'DDQDETR', 'GroundingDINO'
+    'DetectionTransformer', 'ConditionalDETR', 'DINO', 'DABDETR'
 ]

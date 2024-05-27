@@ -8,7 +8,7 @@ from typing import Dict, Optional, Sequence, Tuple, Union
 import mmcv
 import numpy as np
 from mmengine.evaluator import BaseMetric
-from mmengine.fileio import dump, get_local_path, load
+from mmengine.fileio import FileClient, dump, load
 from mmengine.logging import MMLogger, print_log
 from terminaltables import AsciiTable
 
@@ -56,10 +56,9 @@ class CocoPanopticMetric(BaseMetric):
         nproc (int): Number of processes for panoptic quality computing.
             Defaults to 32. When ``nproc`` exceeds the number of cpu cores,
             the number of cpu cores is used.
-        file_client_args (dict, optional): Arguments to instantiate the
-            corresponding backend in mmdet <= 3.0.0rc6. Defaults to None.
-        backend_args (dict, optional): Arguments to instantiate the
-            corresponding backend. Defaults to None.
+        file_client_args (dict): Arguments to instantiate a FileClient.
+            See :class:`mmengine.fileio.FileClient` for details.
+            Defaults to ``dict(backend='disk')``.
         collect_device (str): Device name used for collecting results from
             different ranks during distributed training. Must be 'cpu' or
             'gpu'. Defaults to 'cpu'.
@@ -77,8 +76,7 @@ class CocoPanopticMetric(BaseMetric):
                  format_only: bool = False,
                  outfile_prefix: Optional[str] = None,
                  nproc: int = 32,
-                 file_client_args: dict = None,
-                 backend_args: dict = None,
+                 file_client_args: dict = dict(backend='disk'),
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None) -> None:
         if panopticapi is None:
@@ -110,22 +108,18 @@ class CocoPanopticMetric(BaseMetric):
         self.cat_ids = None
         self.cat2label = None
 
-        self.backend_args = backend_args
-        if file_client_args is not None:
-            raise RuntimeError(
-                'The `file_client_args` is deprecated, '
-                'please use `backend_args` instead, please refer to'
-                'https://github.com/open-mmlab/mmdetection/blob/main/configs/_base_/datasets/coco_detection.py'  # noqa: E501
-            )
+        self.file_client_args = file_client_args
+        self.file_client = FileClient(**file_client_args)
 
         if ann_file:
-            with get_local_path(
-                    ann_file, backend_args=self.backend_args) as local_path:
+            with self.file_client.get_local_path(ann_file) as local_path:
                 self._coco_api = COCOPanoptic(local_path)
             self.categories = self._coco_api.cats
         else:
             self._coco_api = None
             self.categories = None
+
+        self.file_client = FileClient(**file_client_args)
 
     def __del__(self) -> None:
         """Clean up."""
@@ -190,7 +184,7 @@ class CocoPanopticMetric(BaseMetric):
                 }
                 segments_info.append(new_segment_info)
 
-            segm_file = image_info['file_name'].replace('.jpg', '.png')
+            segm_file = image_info['file_name'].replace('jpg', 'png')
             annotation = dict(
                 image_id=img_id,
                 segments_info=segments_info,
@@ -268,16 +262,12 @@ class CocoPanopticMetric(BaseMetric):
         result['img_id'] = img_id
         # shape (1, H, W) -> (H, W)
         pan = pred['pred_panoptic_seg']['sem_seg'].cpu().numpy()[0]
-        ignore_index = pred['pred_panoptic_seg'].get(
-            'ignore_index', len(self.dataset_meta['classes']))
         pan_labels = np.unique(pan)
         segments_info = []
         for pan_label in pan_labels:
             sem_label = pan_label % INSTANCE_OFFSET
-            # We reserve the length of dataset_meta['classes']
-            # and ignore_index for VOID label
-            if sem_label == len(
-                    self.dataset_meta['classes']) or sem_label == ignore_index:
+            # We reserve the length of dataset_meta['classes'] for VOID label
+            if sem_label == len(self.dataset_meta['classes']):
                 continue
             mask = pan == pan_label
             area = mask.sum()
@@ -294,8 +284,6 @@ class CocoPanopticMetric(BaseMetric):
             })
         # evaluation script uses 0 for VOID label.
         pan[pan % INSTANCE_OFFSET == len(self.dataset_meta['classes'])] = VOID
-        pan[pan % INSTANCE_OFFSET == ignore_index] = VOID
-
         pan = id2rgb(pan).astype(np.uint8)
         mmcv.imwrite(pan[:, :, ::-1], osp.join(self.seg_out_dir, segm_file))
         result = {
@@ -330,7 +318,7 @@ class CocoPanopticMetric(BaseMetric):
             # parse pred
             img_id = data_sample['img_id']
             segm_file = osp.basename(data_sample['img_path']).replace(
-                '.jpg', '.png')
+                'jpg', 'png')
             result = self._parse_predictions(
                 pred=data_sample,
                 img_id=img_id,
@@ -382,7 +370,7 @@ class CocoPanopticMetric(BaseMetric):
                 gt_folder=self.seg_prefix,
                 pred_folder=self.seg_out_dir,
                 categories=categories,
-                backend_args=self.backend_args)
+                file_client=self.file_client)
 
             self.results.append(pq_stats)
 
@@ -397,7 +385,7 @@ class CocoPanopticMetric(BaseMetric):
             # parse pred
             img_id = data_sample['img_id']
             segm_file = osp.basename(data_sample['img_path']).replace(
-                '.jpg', '.png')
+                'jpg', 'png')
             result = self._parse_predictions(
                 pred=data_sample, img_id=img_id, segm_file=segm_file)
 
@@ -509,7 +497,7 @@ class CocoPanopticMetric(BaseMetric):
                 gt_folder,
                 pred_folder,
                 self.categories,
-                backend_args=self.backend_args,
+                file_client=self.file_client,
                 nproc=self.nproc)
 
         else:

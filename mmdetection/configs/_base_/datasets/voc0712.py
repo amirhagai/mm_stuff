@@ -2,30 +2,23 @@
 dataset_type = 'VOCDataset'
 data_root = 'data/VOCdevkit/'
 
-# Example to use different file client
-# Method 1: simply set the data root and let the file I/O module
-# automatically Infer from prefix (not support LMDB and Memcache yet)
-
-# data_root = 's3://openmmlab/datasets/detection/segmentation/VOCdevkit/'
-
-# Method 2: Use `backend_args`, `file_client_args` in versions before 3.0.0rc6
-# backend_args = dict(
+# file_client_args = dict(
 #     backend='petrel',
 #     path_mapping=dict({
-#         './data/': 's3://openmmlab/datasets/segmentation/',
-#         'data/': 's3://openmmlab/datasets/segmentation/'
+#         './data/': 's3://openmmlab/datasets/detection/',
+#         'data/': 's3://openmmlab/datasets/detection/'
 #     }))
-backend_args = None
+file_client_args = dict(backend='disk')
 
 train_pipeline = [
-    dict(type='LoadImageFromFile', backend_args=backend_args),
+    dict(type='LoadImageFromFile', file_client_args=file_client_args),
     dict(type='LoadAnnotations', with_bbox=True),
     dict(type='Resize', scale=(1000, 600), keep_ratio=True),
     dict(type='RandomFlip', prob=0.5),
     dict(type='PackDetInputs')
 ]
 test_pipeline = [
-    dict(type='LoadImageFromFile', backend_args=backend_args),
+    dict(type='LoadImageFromFile', file_client_args=file_client_args),
     dict(type='Resize', scale=(1000, 600), keep_ratio=True),
     # avoid bboxes being resized
     dict(type='LoadAnnotations', with_bbox=True),
@@ -57,8 +50,7 @@ train_dataloader = dict(
                     data_prefix=dict(sub_data_root='VOC2007/'),
                     filter_cfg=dict(
                         filter_empty_gt=True, min_size=32, bbox_min_size=32),
-                    pipeline=train_pipeline,
-                    backend_args=backend_args),
+                    pipeline=train_pipeline),
                 dict(
                     type=dataset_type,
                     data_root=data_root,
@@ -66,8 +58,7 @@ train_dataloader = dict(
                     data_prefix=dict(sub_data_root='VOC2012/'),
                     filter_cfg=dict(
                         filter_empty_gt=True, min_size=32, bbox_min_size=32),
-                    pipeline=train_pipeline,
-                    backend_args=backend_args)
+                    pipeline=train_pipeline)
             ])))
 
 val_dataloader = dict(
@@ -82,8 +73,7 @@ val_dataloader = dict(
         ann_file='VOC2007/ImageSets/Main/test.txt',
         data_prefix=dict(sub_data_root='VOC2007/'),
         test_mode=True,
-        pipeline=test_pipeline,
-        backend_args=backend_args))
+        pipeline=test_pipeline))
 test_dataloader = val_dataloader
 
 # Pascal VOC2007 uses `11points` as default evaluate mode, while PASCAL

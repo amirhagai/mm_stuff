@@ -22,14 +22,18 @@ dataset_type = 'CocoDataset'
 data_root = 'data/VOCdevkit/'
 
 train_pipeline = [
-    dict(type='LoadImageFromFile', backend_args={{_base_.backend_args}}),
+    dict(
+        type='LoadImageFromFile',
+        file_client_args={{_base_.file_client_args}}),
     dict(type='LoadAnnotations', with_bbox=True),
     dict(type='Resize', scale=(1000, 600), keep_ratio=True),
     dict(type='RandomFlip', prob=0.5),
     dict(type='PackDetInputs')
 ]
 test_pipeline = [
-    dict(type='LoadImageFromFile', backend_args={{_base_.backend_args}}),
+    dict(
+        type='LoadImageFromFile',
+        file_client_args={{_base_.file_client_args}}),
     dict(type='Resize', scale=(1000, 600), keep_ratio=True),
     # avoid bboxes being resized
     dict(type='LoadAnnotations', with_bbox=True),
@@ -50,8 +54,7 @@ train_dataloader = dict(
             data_prefix=dict(img=''),
             metainfo=METAINFO,
             filter_cfg=dict(filter_empty_gt=True, min_size=32),
-            pipeline=train_pipeline,
-            backend_args={{_base_.backend_args}})))
+            pipeline=train_pipeline)))
 val_dataloader = dict(
     dataset=dict(
         type=dataset_type,
@@ -65,8 +68,7 @@ val_evaluator = dict(
     type='CocoMetric',
     ann_file=data_root + 'annotations/voc07_test.json',
     metric='bbox',
-    format_only=False,
-    backend_args={{_base_.backend_args}})
+    format_only=False)
 test_evaluator = val_evaluator
 
 # training schedule, the dataset is repeated 3 times, so the

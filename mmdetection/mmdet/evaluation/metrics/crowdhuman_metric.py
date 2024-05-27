@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Sequence, Union
 
 import numpy as np
 from mmengine.evaluator import BaseMetric
-from mmengine.fileio import dump, get_text, load
+from mmengine.fileio import FileClient, dump, load
 from mmengine.logging import MMLogger
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import maximum_bipartite_matching
@@ -38,10 +38,9 @@ class CrowdHumanMetric(BaseMetric):
         outfile_prefix (str, optional): The prefix of json files. It includes
             the file path and the prefix of filename, e.g., "a/b/prefix".
             If not specified, a temp file will be created. Defaults to None.
-        file_client_args (dict, optional): Arguments to instantiate the
-            corresponding backend in mmdet <= 3.0.0rc6. Defaults to None.
-        backend_args (dict, optional): Arguments to instantiate the
-            corresponding backend. Defaults to None.
+        file_client_args (dict): Arguments to instantiate a FileClient.
+            See :class:`mmengine.fileio.FileClient` for details.
+            Defaults to ``dict(backend='disk')``.
         collect_device (str): Device name used for collecting results from
             different ranks during distributed training. Must be 'cpu' or
             'gpu'. Defaults to 'cpu'.
@@ -69,8 +68,7 @@ class CrowdHumanMetric(BaseMetric):
                  metric: Union[str, List[str]] = ['AP', 'MR', 'JI'],
                  format_only: bool = False,
                  outfile_prefix: Optional[str] = None,
-                 file_client_args: dict = None,
-                 backend_args: dict = None,
+                 file_client_args: dict = dict(backend='disk'),
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None,
                  eval_mode: int = 0,
@@ -95,13 +93,8 @@ class CrowdHumanMetric(BaseMetric):
             'None when format_only is True, otherwise the result files will'
             'be saved to a temp directory which will be cleaned up at the end.'
         self.outfile_prefix = outfile_prefix
-        self.backend_args = backend_args
-        if file_client_args is not None:
-            raise RuntimeError(
-                'The `file_client_args` is deprecated, '
-                'please use `backend_args` instead, please refer to'
-                'https://github.com/open-mmlab/mmdetection/blob/main/configs/_base_/datasets/coco_detection.py'  # noqa: E501
-            )
+        self.file_client_args = file_client_args
+        self.file_client = FileClient(**file_client_args)
 
         assert eval_mode in [0, 1, 2], \
             "Unknown eval mode. mr_ref should be one of '0', '1', '2'."
@@ -228,11 +221,10 @@ class CrowdHumanMetric(BaseMetric):
         Returns:
             Dict[Image]: The detection result packaged by Image
         """
-        gt_str = get_text(
-            self.ann_file, backend_args=self.backend_args).strip().split('\n')
+        gt_str = self.file_client.get_text(self.ann_file).strip().split('\n')
         gt_records = [json.loads(line) for line in gt_str]
 
-        pred_records = load(result_file, backend_args=self.backend_args)
+        pred_records = load(result_file)
         eval_samples = dict()
         for gt_record, pred_record in zip(gt_records, pred_records):
             assert gt_record['ID'] == pred_record['ID'], \
@@ -276,7 +268,7 @@ class CrowdHumanMetric(BaseMetric):
                 a list of tuples (dtbox, label, imgID) in the descending
                 sort of dtbox.score.
             gt_num(int): The number of gt boxes in the entire dataset.
-            img_num(int): The number of images in the entire dataset.
+            img_num(int)： The number of images in the entire dataset.
 
         Returns:
             ap(float): result of average precision.

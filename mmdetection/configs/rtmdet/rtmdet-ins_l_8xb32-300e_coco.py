@@ -32,7 +32,9 @@ model = dict(
 )
 
 train_pipeline = [
-    dict(type='LoadImageFromFile', backend_args={{_base_.backend_args}}),
+    dict(
+        type='LoadImageFromFile',
+        file_client_args={{_base_.file_client_args}}),
     dict(
         type='LoadAnnotations',
         with_bbox=True,
@@ -65,7 +67,9 @@ train_pipeline = [
 train_dataloader = dict(pin_memory=True, dataset=dict(pipeline=train_pipeline))
 
 train_pipeline_stage2 = [
-    dict(type='LoadImageFromFile', backend_args={{_base_.backend_args}}),
+    dict(
+        type='LoadImageFromFile',
+        file_client_args={{_base_.file_client_args}}),
     dict(
         type='LoadAnnotations',
         with_bbox=True,

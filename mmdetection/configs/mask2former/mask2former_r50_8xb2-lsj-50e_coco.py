@@ -36,10 +36,7 @@ model = dict(
 
 # dataset settings
 train_pipeline = [
-    dict(
-        type='LoadImageFromFile',
-        to_float32=True,
-        backend_args={{_base_.backend_args}}),
+    dict(type='LoadImageFromFile', to_float32=True),
     dict(type='LoadAnnotations', with_bbox=True, with_mask=True),
     dict(type='RandomFlip', prob=0.5),
     # large scale jittering
@@ -60,10 +57,7 @@ train_pipeline = [
 ]
 
 test_pipeline = [
-    dict(
-        type='LoadImageFromFile',
-        to_float32=True,
-        backend_args={{_base_.backend_args}}),
+    dict(type='LoadImageFromFile', to_float32=True),
     dict(type='Resize', scale=(1333, 800), keep_ratio=True),
     # If you don't have a gt annotation, delete the pipeline
     dict(type='LoadAnnotations', with_bbox=True, with_mask=True),
@@ -95,6 +89,5 @@ val_evaluator = dict(
     type='CocoMetric',
     ann_file=data_root + 'annotations/instances_val2017.json',
     metric=['bbox', 'segm'],
-    format_only=False,
-    backend_args={{_base_.backend_args}})
+    format_only=False)
 test_evaluator = val_evaluator

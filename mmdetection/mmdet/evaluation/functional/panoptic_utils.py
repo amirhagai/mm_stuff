@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
 # Copyright (c) 2018, Alexander Kirillov
-# This file supports `backend_args` for `panopticapi`,
+# This file supports `file_client` for `panopticapi`,
 # the source code is copied from `panopticapi`,
 # only the way to load the gt images is modified.
 import multiprocessing
@@ -9,7 +9,7 @@ import os
 
 import mmcv
 import numpy as np
-from mmengine.fileio import get
+from mmengine.fileio import FileClient
 
 # A custom value to distinguish instance ID and category ID; need to
 # be greater than the number of categories.
@@ -32,7 +32,7 @@ def pq_compute_single_core(proc_id,
                            gt_folder,
                            pred_folder,
                            categories,
-                           backend_args=None,
+                           file_client=None,
                            print_log=False):
     """The single core function to evaluate the metric of Panoptic
     Segmentation.
@@ -45,8 +45,8 @@ def pq_compute_single_core(proc_id,
         gt_folder (str): The path of the ground truth images.
         pred_folder (str): The path of the prediction images.
         categories (str): The categories of the dataset.
-        backend_args (object): The Backend of the dataset. If None,
-            the backend will be set to `local`.
+        file_client (object): The file client of the dataset. If None,
+            the backend will be set to `disk`.
         print_log (bool): Whether to print the log. Defaults to False.
     """
     if PQStat is None:
@@ -54,6 +54,10 @@ def pq_compute_single_core(proc_id,
             'panopticapi is not installed, please install it by: '
             'pip install git+https://github.com/cocodataset/'
             'panopticapi.git.')
+
+    if file_client is None:
+        file_client_args = dict(backend='disk')
+        file_client = FileClient(**file_client_args)
 
     pq_stat = PQStat()
 
@@ -64,10 +68,9 @@ def pq_compute_single_core(proc_id,
                 proc_id, idx, len(annotation_set)))
         idx += 1
         # The gt images can be on the local disk or `ceph`, so we use
-        # backend here.
-        img_bytes = get(
-            os.path.join(gt_folder, gt_ann['file_name']),
-            backend_args=backend_args)
+        # file_client here.
+        img_bytes = file_client.get(
+            os.path.join(gt_folder, gt_ann['file_name']))
         pan_gt = mmcv.imfrombytes(img_bytes, flag='color', channel_order='rgb')
         pan_gt = rgb2id(pan_gt)
 
@@ -178,7 +181,7 @@ def pq_compute_multi_core(matched_annotations_list,
                           gt_folder,
                           pred_folder,
                           categories,
-                          backend_args=None,
+                          file_client=None,
                           nproc=32):
     """Evaluate the metrics of Panoptic Segmentation with multithreading.
 
@@ -191,8 +194,8 @@ def pq_compute_multi_core(matched_annotations_list,
         gt_folder (str): The path of the ground truth images.
         pred_folder (str): The path of the prediction images.
         categories (str): The categories of the dataset.
-        backend_args (object): The file client of the dataset. If None,
-            the backend will be set to `local`.
+        file_client (object): The file client of the dataset. If None,
+            the backend will be set to `disk`.
         nproc (int): Number of processes for panoptic quality computing.
             Defaults to 32. When `nproc` exceeds the number of cpu cores,
             the number of cpu cores is used.
@@ -202,6 +205,10 @@ def pq_compute_multi_core(matched_annotations_list,
             'panopticapi is not installed, please install it by: '
             'pip install git+https://github.com/cocodataset/'
             'panopticapi.git.')
+
+    if file_client is None:
+        file_client_args = dict(backend='disk')
+        file_client = FileClient(**file_client_args)
 
     cpu_num = min(nproc, multiprocessing.cpu_count())
 
@@ -213,7 +220,7 @@ def pq_compute_multi_core(matched_annotations_list,
     for proc_id, annotation_set in enumerate(annotations_split):
         p = workers.apply_async(pq_compute_single_core,
                                 (proc_id, annotation_set, gt_folder,
-                                 pred_folder, categories, backend_args))
+                                 pred_folder, categories, file_client))
         processes.append(p)
 
     # Close the process pool, otherwise it will lead to memory

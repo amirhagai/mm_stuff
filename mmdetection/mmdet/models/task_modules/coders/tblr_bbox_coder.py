@@ -1,11 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional, Sequence, Union
-
 import torch
-from torch import Tensor
 
 from mmdet.registry import TASK_UTILS
-from mmdet.structures.bbox import BaseBoxes, HorizontalBoxes, get_box_tensor
+from mmdet.structures.bbox import HorizontalBoxes, get_box_tensor
 from .base_bbox_coder import BaseBBoxCoder
 
 
@@ -26,16 +23,12 @@ class TBLRBBoxCoder(BaseBBoxCoder):
             border of the image. Defaults to True.
     """
 
-    def __init__(self,
-                 normalizer: Union[Sequence[float], float] = 4.0,
-                 clip_border: bool = True,
-                 **kwargs) -> None:
+    def __init__(self, normalizer=4.0, clip_border=True, **kwargs):
         super().__init__(**kwargs)
         self.normalizer = normalizer
         self.clip_border = clip_border
 
-    def encode(self, bboxes: Union[Tensor, BaseBoxes],
-               gt_bboxes: Union[Tensor, BaseBoxes]) -> Tensor:
+    def encode(self, bboxes, gt_bboxes):
         """Get box regression transformation deltas that can be used to
         transform the ``bboxes`` into the ``gt_bboxes`` in the (top, left,
         bottom, right) order.
@@ -57,13 +50,7 @@ class TBLRBBoxCoder(BaseBBoxCoder):
             bboxes, gt_bboxes, normalizer=self.normalizer)
         return encoded_bboxes
 
-    def decode(
-        self,
-        bboxes: Union[Tensor, BaseBoxes],
-        pred_bboxes: Tensor,
-        max_shape: Optional[Union[Sequence[int], Tensor,
-                                  Sequence[Sequence[int]]]] = None
-    ) -> Union[Tensor, BaseBoxes]:
+    def decode(self, bboxes, pred_bboxes, max_shape=None):
         """Apply transformation `pred_bboxes` to `boxes`.
 
         Args:
@@ -93,10 +80,7 @@ class TBLRBBoxCoder(BaseBBoxCoder):
         return decoded_bboxes
 
 
-def bboxes2tblr(priors: Tensor,
-                gts: Tensor,
-                normalizer: Union[Sequence[float], float] = 4.0,
-                normalize_by_wh: bool = True) -> Tensor:
+def bboxes2tblr(priors, gts, normalizer=4.0, normalize_by_wh=True):
     """Encode ground truth boxes to tblr coordinate.
 
     It first convert the gt coordinate to tblr format,
@@ -142,13 +126,12 @@ def bboxes2tblr(priors: Tensor,
     return loc / normalizer
 
 
-def tblr2bboxes(priors: Tensor,
-                tblr: Tensor,
-                normalizer: Union[Sequence[float], float] = 4.0,
-                normalize_by_wh: bool = True,
-                max_shape: Optional[Union[Sequence[int], Tensor,
-                                          Sequence[Sequence[int]]]] = None,
-                clip_border: bool = True) -> Tensor:
+def tblr2bboxes(priors,
+                tblr,
+                normalizer=4.0,
+                normalize_by_wh=True,
+                max_shape=None,
+                clip_border=True):
     """Decode tblr outputs to prediction boxes.
 
     The process includes 3 steps: 1) De-normalize tblr coordinates by

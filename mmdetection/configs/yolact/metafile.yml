@@ -24,7 +24,6 @@ Models:
     Metadata:
       Training Resources: 1x V100 GPU
       Batch Size: 8
-      Epochs: 55
       inference time (ms/im):
         - value: 23.53
           hardware: V100
@@ -44,7 +43,6 @@ Models:
     Config: configs/yolact/yolact_r50_8xb8-55e_coco.py
     Metadata:
       Batch Size: 64
-      Epochs: 55
       inference time (ms/im):
         - value: 23.53
           hardware: V100
@@ -65,7 +63,6 @@ Models:
     Metadata:
       Training Resources: 1x V100 GPU
       Batch Size: 8
-      Epochs: 55
       inference time (ms/im):
         - value: 29.85
           hardware: V100

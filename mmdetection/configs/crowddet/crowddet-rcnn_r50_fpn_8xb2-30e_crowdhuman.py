@@ -132,24 +132,9 @@ model = dict(
 
 dataset_type = 'CrowdHumanDataset'
 data_root = 'data/CrowdHuman/'
-
-# Example to use different file client
-# Method 1: simply set the data root and let the file I/O module
-# automatically infer from prefix (not support LMDB and Memcache yet)
-
-# data_root = 's3://openmmlab/datasets/tracking/CrowdHuman/'
-
-# Method 2: Use `backend_args`, `file_client_args` in versions before 3.0.0rc6
-# backend_args = dict(
-#     backend='petrel',
-#     path_mapping=dict({
-#         './data/': 's3://openmmlab/datasets/tracking/',
-#         'data/': 's3://openmmlab/datasets/tracking/'
-#     }))
-backend_args = None
-
+file_client_args = dict(backend='disk')
 train_pipeline = [
-    dict(type='LoadImageFromFile', backend_args=backend_args),
+    dict(type='LoadImageFromFile', file_client_args=file_client_args),
     dict(type='LoadAnnotations', with_bbox=True),
     dict(type='RandomFlip', prob=0.5),
     dict(
@@ -158,7 +143,7 @@ train_pipeline = [
                    'flip_direction'))
 ]
 test_pipeline = [
-    dict(type='LoadImageFromFile', backend_args=backend_args),
+    dict(type='LoadImageFromFile', file_client_args=file_client_args),
     dict(type='Resize', scale=(1400, 800), keep_ratio=True),
     # avoid bboxes being resized
     dict(type='LoadAnnotations', with_bbox=True),
@@ -180,8 +165,7 @@ train_dataloader = dict(
         ann_file='annotation_train.odgt',
         data_prefix=dict(img='Images/'),
         filter_cfg=dict(filter_empty_gt=True, min_size=32),
-        pipeline=train_pipeline,
-        backend_args=backend_args))
+        pipeline=train_pipeline))
 val_dataloader = dict(
     batch_size=1,
     num_workers=2,
@@ -194,15 +178,13 @@ val_dataloader = dict(
         ann_file='annotation_val.odgt',
         data_prefix=dict(img='Images/'),
         test_mode=True,
-        pipeline=test_pipeline,
-        backend_args=backend_args))
+        pipeline=test_pipeline))
 test_dataloader = val_dataloader
 
 val_evaluator = dict(
     type='CrowdHumanMetric',
     ann_file=data_root + 'annotation_val.odgt',
-    metric=['AP', 'MR', 'JI'],
-    backend_args=backend_args)
+    metric=['AP', 'MR', 'JI'])
 test_evaluator = val_evaluator
 
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=30, val_interval=1)

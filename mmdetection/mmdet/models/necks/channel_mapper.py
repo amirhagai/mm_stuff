@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import torch.nn as nn
 from mmcv.cnn import ConvModule
@@ -27,9 +27,6 @@ class ChannelMapper(BaseModule):
             normalization layer. Default: None.
         act_cfg (:obj:`ConfigDict` or dict, optional): Config dict for
             activation layer in ConvModule. Default: dict(type='ReLU').
-        bias (bool | str): If specified as `auto`, it will be decided by the
-            norm_cfg. Bias will be set as True if `norm_cfg` is None, otherwise
-            False. Default: "auto".
         num_outs (int, optional): Number of output feature maps. There would
             be extra_convs when num_outs larger than the length of in_channels.
         init_cfg (:obj:`ConfigDict` or dict or list[:obj:`ConfigDict` or dict],
@@ -58,7 +55,6 @@ class ChannelMapper(BaseModule):
         conv_cfg: OptConfigType = None,
         norm_cfg: OptConfigType = None,
         act_cfg: OptConfigType = dict(type='ReLU'),
-        bias: Union[bool, str] = 'auto',
         num_outs: int = None,
         init_cfg: OptMultiConfig = dict(
             type='Xavier', layer='Conv2d', distribution='uniform')
@@ -78,8 +74,7 @@ class ChannelMapper(BaseModule):
                     padding=(kernel_size - 1) // 2,
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
-                    act_cfg=act_cfg,
-                    bias=bias))
+                    act_cfg=act_cfg))
         if num_outs > len(in_channels):
             self.extra_convs = nn.ModuleList()
             for i in range(len(in_channels), num_outs):
@@ -96,8 +91,7 @@ class ChannelMapper(BaseModule):
                         padding=1,
                         conv_cfg=conv_cfg,
                         norm_cfg=norm_cfg,
-                        act_cfg=act_cfg,
-                        bias=bias))
+                        act_cfg=act_cfg))
 
     def forward(self, inputs: Tuple[Tensor]) -> Tuple[Tensor]:
         """Forward function."""

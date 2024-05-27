@@ -1,11 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Union
-
 import torch
-from torch import Tensor
 
 from mmdet.registry import TASK_UTILS
-from mmdet.structures.bbox import BaseBoxes, HorizontalBoxes, get_box_tensor
+from mmdet.structures.bbox import HorizontalBoxes, get_box_tensor
 from .base_bbox_coder import BaseBBoxCoder
 
 
@@ -22,13 +19,11 @@ class YOLOBBoxCoder(BaseBBoxCoder):
         eps (float): Min value of cx, cy when encoding.
     """
 
-    def __init__(self, eps: float = 1e-6, **kwargs):
+    def __init__(self, eps=1e-6, **kwargs):
         super().__init__(**kwargs)
         self.eps = eps
 
-    def encode(self, bboxes: Union[Tensor, BaseBoxes],
-               gt_bboxes: Union[Tensor, BaseBoxes],
-               stride: Union[Tensor, int]) -> Tensor:
+    def encode(self, bboxes, gt_bboxes, stride):
         """Get box regression transformation deltas that can be used to
         transform the ``bboxes`` into the ``gt_bboxes``.
 
@@ -64,8 +59,7 @@ class YOLOBBoxCoder(BaseBBoxCoder):
             [x_center_target, y_center_target, w_target, h_target], dim=-1)
         return encoded_bboxes
 
-    def decode(self, bboxes: Union[Tensor, BaseBoxes], pred_bboxes: Tensor,
-               stride: Union[Tensor, int]) -> Union[Tensor, BaseBoxes]:
+    def decode(self, bboxes, pred_bboxes, stride):
         """Apply transformation `pred_bboxes` to `boxes`.
 
         Args:

@@ -157,11 +157,11 @@ class VOCMetric(BaseMetric):
             eval_results['mAP'] = sum(mean_aps) / len(mean_aps)
             eval_results.move_to_end('mAP', last=False)
         elif self.metric == 'recall':
-            gt_bboxes = [gt['bboxes'] for gt in gts]
-            pr_bboxes = [pred[0] for pred in preds]
+            # TODO: Currently not checked.
+            gt_bboxes = [ann['bboxes'] for ann in self.annotations]
             recalls = eval_recalls(
                 gt_bboxes,
-                pr_bboxes,
+                results,
                 self.proposal_nums,
                 self.iou_thrs,
                 logger=logger,

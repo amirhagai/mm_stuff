@@ -17,7 +17,7 @@ test_evaluator = val_evaluator
 #         type='CocoMetric',
 #         ann_file=data_root + 'annotations/instances_val2017.json',
 #         metric='proposal_fast',
-#         backend_args={{_base_.backend_args}},
+#         file_client_args={{_base_.file_client_args}},
 #         format_only=False)
 # ]
 

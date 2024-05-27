@@ -221,8 +221,7 @@ class DINO(DeformableDETR):
                         spatial_shapes: Tensor,
                         level_start_index: Tensor,
                         valid_ratios: Tensor,
-                        dn_mask: Optional[Tensor] = None,
-                        **kwargs) -> Dict:
+                        dn_mask: Optional[Tensor] = None) -> Dict:
         """Forward with Transformer decoder.
 
         The forward procedure of the transformer is defined as:
@@ -271,8 +270,7 @@ class DINO(DeformableDETR):
             spatial_shapes=spatial_shapes,
             level_start_index=level_start_index,
             valid_ratios=valid_ratios,
-            reg_branches=self.bbox_head.reg_branches,
-            **kwargs)
+            reg_branches=self.bbox_head.reg_branches)
 
         if len(query) == self.num_queries:
             # NOTE: This is to make sure label_embeding can be involved to
