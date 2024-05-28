@@ -4,6 +4,19 @@ _base_ = [
 ]
 checkpoint = 'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
 
+
+
+
+import sys 
+sys.path.append('/mm_stuff')
+custom_imports = dict(imports=['converters.converter1'], allow_failed_imports=False)
+conv = dict(type='Converter1', a=5, b=6)
+custom_imports = dict(imports=['transform.transforms'], allow_failed_imports=False)
+conv = dict(type='BboxColorJitter2(', prob=0.)
+
+
+
+
 angle_version = 'le90'
 model = dict(
     type='mmdet.RTMDet',
