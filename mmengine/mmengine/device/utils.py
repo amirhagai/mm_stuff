@@ -136,3 +136,12 @@ def get_device() -> str:
         str: cuda | npu | mlu | mps | musa | cpu.
     """
     return DEVICE
+
+def set_device(device: str) -> None:
+    """Sets the device to a specified value.
+
+    Args:
+        device (str): The device type to set.
+    """
+    global DEVICE
+    DEVICE = device
