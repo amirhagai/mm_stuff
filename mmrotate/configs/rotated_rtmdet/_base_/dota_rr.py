@@ -1,6 +1,6 @@
 
-import sys 
-sys.path.append('/mm_stuff')
+# import sys 
+# sys.path.append('/mm_stuff')
 # custom_imports = dict(imports=['converters.converter1'], allow_failed_imports=False)
 # conv = dict(type='Converter1', a=5, b=6)
 custom_imports = dict(imports=['transform.transforms'], allow_failed_imports=False)
@@ -18,6 +18,7 @@ train_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
     dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
     dict(type='ConvertBoxType', box_type_mapping=dict(gt_bboxes='rbox')),
+    dict(type='BboxColorJitter2', prob=0.8),
     dict(type='mmdet.Resize', scale=(size, size), keep_ratio=True),
     dict(
         type='mmdet.RandomFlip',

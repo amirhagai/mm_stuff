@@ -2,19 +2,32 @@ _base_ = [
     './_base_/default_runtime.py', './_base_/schedule_3x.py',
     './_base_/dota_rr.py'
 ]
-checkpoint = 'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
-
-
+checkpoint =  'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
 
 
 import sys 
 sys.path.append('/mm_stuff')
-custom_imports = dict(imports=['converters.converter1'], allow_failed_imports=False)
-conv = dict(type='Converter1', a=5, b=6)
-custom_imports = dict(imports=['transform.transforms'], allow_failed_imports=False)
-conv = dict(type='BboxColorJitter2', prob=0.)
+# from transform.transforms import *
+# from backbones_grad.cspNextGrad import *
 
+# custom_imports = dict(imports=['converters.converter1'], allow_failed_imports=False)
+# conv = dict(type='Converter1', a=5, b=6)
+# custom_imports = dict(imports=['backbones_grad'], allow_failed_imports=False)
+custom_imports = dict(imports=['transform.transforms', 'backbones_grad.cspNextGrad'], allow_failed_imports=False)
+# custom_imports = dict(imports=['backbones_grad.cspNextGrad'], allow_failed_imports=False)
+# custom_imports = dict(imports=['transform.transforms', 'backbones_grad.cspNextGrad', 'transform', 'backbones_grad'], allow_failed_imports=False)
 
+# backbone2=dict(
+#     type='mmdet.CSPNeXtGrad',
+#     arch='P5',
+#     expand_ratio=0.5,
+#     deepen_factor=1,
+#     widen_factor=1,
+#     channel_attention=True,
+#     norm_cfg=dict(type='SyncBN'),
+#     act_cfg=dict(type='SiLU'),
+
+#     )
 
 
 angle_version = 'le90'
@@ -28,7 +41,7 @@ model = dict(
         boxtype2tensor=False,
         batch_augments=None),
     backbone=dict(
-        type='mmdet.CSPNeXt',
+        type='mmdet.CSPNeXtGrad',
         arch='P5',
         expand_ratio=0.5,
         deepen_factor=1,
@@ -36,8 +49,9 @@ model = dict(
         channel_attention=True,
         norm_cfg=dict(type='SyncBN'),
         act_cfg=dict(type='SiLU'),
-        init_cfg=dict(
-            type='Pretrained', prefix='backbone.', checkpoint=checkpoint)),
+        # init_cfg=dict(
+        #     type='Pretrained', prefix='backbone.', checkpoint=checkpoint)
+        ),
     neck=dict(
         type='mmdet.CSPNeXtPAFPN',
         in_channels=[256, 512, 1024],

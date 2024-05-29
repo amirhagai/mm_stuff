@@ -17,6 +17,8 @@ from PIL import Image
 from torchvision.transforms import Compose, ToTensor, ColorJitter, ToPILImage
 from mmrotate.registry import TRANSFORMS
 from pathlib import Path
+# from .builder import TRANSFORM_PRIVATE
+
 
 # use the registry to manage the module
 @TRANSFORMS.register_module()
