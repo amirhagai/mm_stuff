@@ -16,6 +16,8 @@ from mmrotate.utils import register_all_modules
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
     parser.add_argument('config', help='train config file path')
+    parser.add_argument('--device', help='help to set device other then the default'\
+        , default="")
     parser.add_argument('--work-dir', help='the dir to save logs and models')
     parser.add_argument(
         '--amp',
@@ -57,7 +59,10 @@ def parse_args():
 
 
 def main():
+    from mmengine.device.utils import set_device
     args = parse_args()
+    if args.device != "":
+        set_device(args.device)
 
     # register all modules in mmdet into the registries
     # do not init the default scope here because it will be init in the runner
