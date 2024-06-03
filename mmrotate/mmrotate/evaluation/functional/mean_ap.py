@@ -350,9 +350,10 @@ def print_map_summary(
     for i, cls_result in enumerate(results):
         if cls_result['recall'].size > 0:
             recalls[:, i] = np.array(cls_result['recall'], ndmin=2)[:, -1]
+        if cls_result['precision'].size > 0:
+            precisions[:, i] = np.array(cls_result['precision'], ndmin=2)[:, -1]
         aps[:, i] = cls_result['ap']
         num_gts[:, i] = cls_result['num_gts']
-        precisions[:, i] = cls_result['precision']
 
     if dataset is None:
         label_names = [str(i) for i in range(num_classes)]
