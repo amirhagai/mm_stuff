@@ -11,7 +11,7 @@ from mmengine.registry import RUNNERS
 from mmengine.runner import Runner
 
 from mmrotate.utils import register_all_modules
-
+from mmengine.device import set_device
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
@@ -59,7 +59,7 @@ def parse_args():
 
 
 def main():
-    from mmengine.device.utils import set_device
+
     args = parse_args()
     if args.device != "":
         set_device(args.device)
