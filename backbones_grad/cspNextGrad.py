@@ -13,6 +13,8 @@ from mmdet.registry import MODELS
 from mmdet.utils import ConfigType, OptConfigType, OptMultiConfig
 from mmdet.models.layers import CSPLayer
 from mmdet.models.backbones.csp_darknet import SPPBottleneck
+import torch
+import torch.nn.functional as F
 
 
 @MODELS.register_module()
@@ -78,6 +80,7 @@ class CSPNeXtGrad(BaseModule):
         norm_cfg: ConfigType = dict(type='BN', momentum=0.03, eps=0.001),
         act_cfg: ConfigType = dict(type='SiLU'),
         norm_eval: bool = False,
+        use_grad: bool = True,
         init_cfg: OptMultiConfig = dict(
             type='Kaiming',
             layer='Conv2d',
@@ -169,6 +172,7 @@ class CSPNeXtGrad(BaseModule):
             stage.append(csp_layer)
             self.add_module(f'stage{i + 1}', nn.Sequential(*stage))
             self.layers.append(f'stage{i + 1}')
+            self.use_grad = use_grad
 
     def _freeze_stages(self) -> None:
         if self.frozen_stages >= 0:
@@ -186,31 +190,43 @@ class CSPNeXtGrad(BaseModule):
                 if isinstance(m, _BatchNorm):
                     m.eval()
 
-    def compute_gradients_and_laplacian(image):
-        # Sobel filters for gradient computation
-        sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-        sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-        
-        # Laplacian kernel
-        laplacian_kernel = torch.tensor([[0, 1, 0], [1, -4, 1], [0, 1, 0]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-        
-        # Apply the convolution to each channel separately
-        grad_x = []
-        grad_y = []
-        laplacian = []
-        
-        for i in range(image.size(1)):  # Loop over each channel
-            grad_x.append(F.conv2d(image[:, i:i+1, :, :], sobel_x, padding=1))
-            grad_y.append(F.conv2d(image[:, i:i+1, :, :], sobel_y, padding=1))
-            laplacian.append(F.conv2d(image[:, i:i+1, :, :], laplacian_kernel, padding=1))
-        
-        # Concatenate the results and then average over the channel dimension
-        grad_x = torch.cat(grad_x, dim=1).mean(dim=1)
-        grad_y = torch.cat(grad_y, dim=1).mean(dim=1)
-        laplacian = torch.cat(laplacian, dim=1).mean(dim=1)
-        return torch.cat([grad_x[:, None, :, :], grad_y[:, None, :, :], laplacian[:, None, :, :]], dim=1)
+    def compute_gradients_and_laplacian(self, image):
+        with torch.no_grad():
+            # Sobel filters for gradient computation
+            sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(image.device)
+            sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(image.device)
+            
+            # Laplacian kernel
+            laplacian_kernel = torch.tensor([[0, 1, 0], [1, -4, 1], [0, 1, 0]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(image.device)
+            
+            # Apply the convolution to each channel separately
+            grad_x = []
+            grad_y = []
+            laplacian = []
+            
+            for i in range(image.size(1)):  # Loop over each channel
+                grad_x.append(F.conv2d(image[:, i:i+1, :, :], sobel_x, padding=1))
+                grad_y.append(F.conv2d(image[:, i:i+1, :, :], sobel_y, padding=1))
+                laplacian.append(F.conv2d(image[:, i:i+1, :, :], laplacian_kernel, padding=1))
+            
+            # Concatenate the results and then average over the channel dimension
+            grad_x = torch.cat(grad_x, dim=1).mean(dim=1)
+            grad_y = torch.cat(grad_y, dim=1).mean(dim=1)
+            laplacian = torch.cat(laplacian, dim=1).mean(dim=1)
+            return torch.cat([grad_x[:, None, :, :], grad_y[:, None, :, :], laplacian[:, None, :, :]], dim=1)
 
     def forward(self, x: Tuple[Tensor, ...]) -> Tuple[Tensor, ...]:
+
+        if self.use_grad:
+            grad_v = self.compute_gradients_and_laplacian(x)
+            outs_grad = []
+            for i, layer_name in enumerate(self.layers):
+                layer = getattr(self, layer_name)
+                grad_v  = layer(grad_v )
+                if i in self.out_indices:
+                    outs_grad.append(grad_v )
+            return tuple(outs_grad)
+
         outs = []
         for i, layer_name in enumerate(self.layers):
             layer = getattr(self, layer_name)
