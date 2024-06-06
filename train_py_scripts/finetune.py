@@ -9,15 +9,21 @@ from mmengine.config import Config, DictAction
 from mmengine.logging import print_log
 from mmengine.registry import RUNNERS
 from mmengine.runner import Runner
-
+import torch
 from mmrotate.utils import register_all_modules
 from mmengine.device import set_device
+from mmengine.registry import (MODELS, DefaultScope)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
     parser.add_argument('config', help='train config file path')
+    # parser.add_argument('trained_model_full_path', help='path to .pth file')
     parser.add_argument('--device', help='help to set device other then the default'\
         , default="")
+    # parser.add_argument('--layers_to_remove', help='which layers to remove'\
+    #     , default="bbox_head")
+    # parser.add_argument('--exact_layers_or_start_with', help='remove the exact layers or layers start with name'\
+    #     , default="start_with")
     parser.add_argument('--work-dir', help='the dir to save logs and models')
     parser.add_argument(
         '--amp',
@@ -56,6 +62,19 @@ def parse_args():
         os.environ['LOCAL_RANK'] = str(args.local_rank)
 
     return args
+
+def load_pre_train_model(cfg):
+
+    runner = Runner.from_cfg(cfg)
+    model = MODELS.build(cfg['model'])
+    trained = torch.load(cfg['trained_model_full_path'])
+    if cfg['exact_layers_or_start_with'] == "start_with":
+        trained_trim = {k:v for k, v in trained['state_dict'].items() if not k.startswith(cfg['layers_to_remove'])}
+    else:
+        to_remove = set(cfg['layers_to_remove'].split(' '))
+        trained_trim = {k:v for k, v in trained['state_dict'].items() if not k in to_remove}
+    model.load_state_dict(trained_trim , strict=False)
+    return model
 
 
 def main():
@@ -113,23 +132,39 @@ def main():
 
     cfg.resume = args.resume
 
-    cfg['train_dataloader']['dataset']['ignore_classes']
-    # build the runner from config
-    if 'runner_type' not in cfg:
-        # build the default runner
-        runner = Runner.from_cfg(cfg)
-    else:
-        # build customized runner from the registry
-        # if 'runner_type' is set in the cfg
-        runner = RUNNERS.build(cfg)
+    model = load_pre_train_model(cfg)
+    runner = Runner(
+    model=model,
+    work_dir=cfg['work_dir'],
+    train_dataloader=cfg.get('train_dataloader'),
+    val_dataloader=cfg.get('val_dataloader'),
+    test_dataloader=cfg.get('test_dataloader'),
+    train_cfg=cfg.get('train_cfg'),
+    val_cfg=cfg.get('val_cfg'),
+    test_cfg=cfg.get('test_cfg'),
+    auto_scale_lr=cfg.get('auto_scale_lr'),
+    optim_wrapper=cfg.get('optim_wrapper'),
+    param_scheduler=cfg.get('param_scheduler'),
+    val_evaluator=cfg.get('val_evaluator'),
+    test_evaluator=cfg.get('test_evaluator'),
+    default_hooks=cfg.get('default_hooks'),
+    custom_hooks=cfg.get('custom_hooks'),
+    data_preprocessor=cfg.get('data_preprocessor'),
+    load_from=cfg.get('load_from'),
+    resume=cfg.get('resume', False),
+    launcher=cfg.get('launcher', 'none'),
+    env_cfg=cfg.get('env_cfg', dict(dist_cfg=dict(backend='nccl'))),
+    log_processor=cfg.get('log_processor'),
+    log_level=cfg.get('log_level', 'INFO'),
+    visualizer=cfg.get('visualizer'),
+    default_scope=cfg.get('default_scope', 'mmengine'),
+    randomness=cfg.get('randomness', dict(seed=None)),
+    experiment_name=cfg.get('experiment_name'),
+    cfg=cfg,
+)
 
-    # model = runner.model
-    # cfg['model']['bbox_head']['num_classes'] = 14
-    # x = runner.train_dataloader.dataset
-    # model.bbox_head = runner.build_model(cfg['model']['bbox_head'])
-    # start training
+
     model = runner.train()
-    print()
 
 
 if __name__ == '__main__':
