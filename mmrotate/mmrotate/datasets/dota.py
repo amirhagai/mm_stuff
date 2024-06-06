@@ -40,9 +40,14 @@ class DOTADataset(BaseDataset):
     def __init__(self,
                  diff_thr: int = 100,
                  img_suffix: str = 'png',
+                 ignore_classes: str = '',
                  **kwargs) -> None:
         self.diff_thr = diff_thr
         self.img_suffix = img_suffix
+        self.ignore_classes = ignore_classes
+        if ignore_classes != '':
+            self.METAINFO['classes'] = tuple(cls_name for cls_name in self.METAINFO['classes'] if cls_name not in ignore_classes)
+            self.METAINFO['palette'] = list(self.METAINFO['palette'][i] for i, cls_name in enumerate(self.METAINFO['classes']) if cls_name not in ignore_classes)
         super().__init__(**kwargs)
 
     def load_data_list(self) -> List[dict]:
@@ -90,8 +95,10 @@ class DOTADataset(BaseDataset):
                     for si in s:
                         instance = {}
                         bbox_info = si.split()
-                        instance['bbox'] = [float(i) for i in bbox_info[:8]]
                         cls_name = bbox_info[8]
+                        if cls_name in self.ignore_classes:
+                            continue
+                        instance['bbox'] = [float(i) for i in bbox_info[:8]]
                         instance['bbox_label'] = cls_map[cls_name]
                         difficulty = int(bbox_info[9])
                         if difficulty > self.diff_thr:
