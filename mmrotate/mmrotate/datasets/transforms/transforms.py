@@ -170,7 +170,7 @@ class InjectLargeVehicleData(BaseTransform):
             if random.random() < self.prob:
                 sampled_images.append(matching_images[i])
                 sampled_segs.append(matching_segs[i])
-        
+        sampled_images, sampled_segs = [np.array(Image.open(f"{folder_path}/{im}"))[:, :, ::-1] for im in sampled_images], [np.array(Image.open(f"{folder_path}/{im}"))[:, :, None] / 255 for im in sampled_segs]
 
         return sampled_images, sampled_segs
         
