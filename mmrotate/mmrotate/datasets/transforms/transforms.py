@@ -175,37 +175,38 @@ class InjectLargeVehicleData(BaseTransform):
         return sampled_images, sampled_segs
         
 
+
     def transform(self, results: dict) -> dict:
 
-
+        if self.prob == 0:
+            return results
+        
         folder_path = f"{self.base_path }/mid_reults/{results['file_name'][:-4]}"
         if not os.path.exists(folder_path):
             return results
+            
         sampled_images, sampled_segs = self.get_files(folder_path)
+        if len(sampled_images) == 0:
+            return results
 
-        sampled_images, sampled_segs = [np.array(Image.open(f"{folder_path}/{im}"))[:, :, ::-1] for im in sampled_images], [np.array(Image.open(f"{folder_path}/{im}"))[:, :, None] / 255 for im in sampled_segs]
-
-
-        dota_np = results['img'].astype(np.float32)
         if self.injection_type == 'ycbcr':
-            for i in range(len(sampled_images)):
+            sampled_im = np.sum(np.array(sampled_images), axis=0)
+            sim_images_ycbcr = np.array(Image.fromarray(sampled_im.astype(np.uint8)).convert('YCbCr'))
+            sampled_seg = np.sum(np.array(sampled_segs), axis=0)
+            dota_np = results['img'].astype(np.float32)
+            yuv_origin = np.array(
+                Image.fromarray((sampled_seg * dota_np).astype(np.uint8)).convert('YCbCr')
+            )
 
-                yuv_img = np.array(Image.fromarray(sampled_images[i]).convert('YCbCr'))
-                yuv_origin = np.array(
-                    Image.fromarray((sampled_segs[i] * dota_np).astype(np.uint8)).convert('YCbCr')
-                )
+            new_obj_im = np.concatenate(
+                [
+                    yuv_origin[:, :, 0][:, :, None],
+                    sim_images_ycbcr[:, :, 1:],
+                ],
+                axis=2,
+            ).astype(np.uint8)[:, :, ::-1]
+            dota_np = (1 - sampled_seg) * dota_np + sampled_seg * new_obj_im
 
-                new_obj = np.concatenate(
-                    [
-                        yuv_origin[:, :, 0][:, :, None],
-                        yuv_img[:, :, 1][:, :, None],
-                        yuv_img[:, :, 2][:, :, None],
-                    ],
-                    axis=2,
-                ).astype(np.uint8)
-
-                new_obj_im = np.array(Image.fromarray(new_obj, 'YCbCr'))[:, :, ::-1]
-                dota_np = (1 - sampled_segs[i]) * dota_np + sampled_segs[i] * new_obj_im
 
         elif self.injection_type == "simple":
 
