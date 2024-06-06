@@ -1,0 +1,5 @@
+# Ignore work_dir folder
+work_dirs/
+
+# Ignore __pycache__ directories
+__pycache__/
