@@ -3,3 +3,5 @@ work_dirs/
 
 # Ignore __pycache__ directories
 __pycache__/
+mmrotate.egg-info/
+.mim/
