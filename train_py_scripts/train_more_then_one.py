@@ -123,15 +123,16 @@ def main():
 
     cfg.resume = args.resume
 
-    for prob in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]:
+    for prob in [0.8, 0.9, 1]:
 
         ind = 0
         for i in range(len(cfg['train_pipeline'])):
             if cfg['train_pipeline'][i]['type'] == 'InjectLargeVehicleData':
                 ind = i
                 break
-
+        print(ind)
         cfg['train_pipeline'][ind]['prob'] = prob
+        cfg['train_dataloader']['dataset']['pipeline'][ind]['prob'] = prob
         cfg['experiment_name'] = f"inject_{prob}_ycbcr_120"
         # build the runner from config
         if "runner_type" not in cfg:
