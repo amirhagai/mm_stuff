@@ -1,4 +1,4 @@
-max_epochs =  10
+max_epochs =  10 * 12 +1
 base_lr = 0.004 / 16
 interval = 12
 

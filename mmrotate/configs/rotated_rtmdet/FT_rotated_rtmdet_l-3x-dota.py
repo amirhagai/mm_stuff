@@ -30,7 +30,9 @@ checkpoint = '/root/.cache/torch/hub/checkpoints/cspnext-l_8xb256-rsb-a1-600e_in
 #     )
 
 num_classes_removed = len(_base_['ignore_classes'].split(' ')) if _base_['ignore_classes'] != '' else 0
-
+trained_model_full_path = "/work_dirs/FT_rotated_rtmdet_l-3x-dota/epoch_2.pth"
+layers_to_remove = "bbox_head"
+exact_layers_or_start_with = "start_with"
 angle_version = 'le90'
 model = dict(
     type='mmdet.RTMDet',

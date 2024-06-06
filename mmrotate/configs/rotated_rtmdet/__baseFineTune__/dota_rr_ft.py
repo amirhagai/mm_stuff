@@ -12,7 +12,7 @@ data_root = 'data/split_ss_dota/'
 
 backend_args = None
 
-ignore_classes = 'large-vehicle plane'
+ignore_classes = '' #'large-vehicle plane small-vehicle'
 
 
 size = 512

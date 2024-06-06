@@ -1,19 +1,19 @@
 _base_ = [
-    './_base_/default_runtime.py', './_base_/schedule_3x.py',
-    './_base_/dota_rr.py'
+    './__base_less_classes__/default_runtime_lc.py', './__base_less_classes__/schedule_3x_lc.py',
+    './__base_less_classes__/dota_rr_lcs.py'
 ]
 # checkpoint =  'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
 checkpoint = '/root/.cache/torch/hub/checkpoints/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'
 
-import sys 
-sys.path.append('/mm_stuff')
+# import sys 
+# sys.path.append('/mm_stuff')
 # from transform.transforms import *
 # from backbones_grad.cspNextGrad import *
 
 # custom_imports = dict(imports=['converters.converter1'], allow_failed_imports=False)
 # conv = dict(type='Converter1', a=5, b=6)
 # custom_imports = dict(imports=['backbones_grad'], allow_failed_imports=False)
-custom_imports = dict(imports=['transform.transforms', 'backbones_grad.cspNextGrad'], allow_failed_imports=False)
+# custom_imports = dict(imports=['transform.transforms', 'backbones_grad.cspNextGrad'], allow_failed_imports=False)
 # custom_imports = dict(imports=['backbones_grad.cspNextGrad'], allow_failed_imports=False)
 # custom_imports = dict(imports=['transform.transforms', 'backbones_grad.cspNextGrad', 'transform', 'backbones_grad'], allow_failed_imports=False)
 
@@ -29,6 +29,7 @@ custom_imports = dict(imports=['transform.transforms', 'backbones_grad.cspNextGr
 
 #     )
 
+num_classes_removed = len(_base_['ignore_classes'].split(' ')) if _base_['ignore_classes'] != '' else 0
 
 angle_version = 'le90'
 model = dict(
@@ -62,7 +63,7 @@ model = dict(
         act_cfg=dict(type='SiLU')),
     bbox_head=dict(
         type='RotatedRTMDetSepBNHead',
-        num_classes=15,
+        num_classes=15 - num_classes_removed,
         in_channels=256,
         stacked_convs=2,
         feat_channels=256,
