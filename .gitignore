@@ -5,3 +5,4 @@ work_dirs/
 __pycache__/
 mmrotate.egg-info/
 .mim/
+__pycache__/
