@@ -104,7 +104,9 @@ class EpochBasedTrainLoop(BaseLoop):
                          or self._epoch == self._max_epochs)):
                 self.runner.val_loop.run()
                 if (self.runner.train_val_loop is not None):
+                    print_log('\n\n\nStart val loop over train set\n\n\n')
                     self.runner.train_val_loop.run()
+                    print_log('\n\n\nEnd val loop over train set\n\n\n')
 
         self.runner.call_hook('after_train')
         return self.runner.model
