@@ -28,7 +28,8 @@ sys.path.append('/mm_stuff')
 #     act_cfg=dict(type='SiLU'),
 
 #     )
-
+dataset_type = 'DOTADataset'
+data_root = 'data/split_ss_dota/'
 num_classes_removed = 0 # len(_base_['ignore_classes'].split(' ')) if _base_['ignore_classes'] != '' else 0
 # trained_model_full_path = "/work_dirs/FT_rotated_rtmdet_l-3x-dota/epoch_2.pth"
 random_alpha_y_channel = True
@@ -46,7 +47,7 @@ train_pipeline = [
         direction=['horizontal', 'vertical', 'diagonal']),
     dict(
         type='RandomRotate',
-        prob=0.5,
+        prob=0.5,s
         angle_range=180,
         rect_obj_labels=[9, 11]),
     dict(
@@ -54,6 +55,7 @@ train_pipeline = [
         pad_val=dict(img=(114, 114, 114))),
     dict(type='mmdet.PackDetInputs')
 ]
+
 
 angle_version = 'le90'
 model = dict(

@@ -127,12 +127,13 @@ def main():
 
         ind = -1
         for i in range(len(cfg['train_pipeline'])):
-            if cfg['train_pipeline'][i]['type'] == 'InjectLargeVehicleData' or cfg['train_pipeline'][i]['type'] == 'BboxColorJitter':
+            if (cfg['train_pipeline'][i]['type'] == 'InjectLargeVehicleData') or (cfg['train_pipeline'][i]['type'] == 'BboxColorJitter'):
                 ind = i
                 break
+
         if ind != - 1:
             cfg['train_pipeline'][ind]['prob'] = prob
-            cfg['train_dataloader']['dataset']['pipeline'][ind]['prob'] = prob
+            cfg['train_dataloader']['dataset']['pipeline'] = cfg['train_pipeline']
             if cfg['train_pipeline'][i]['type'] == 'InjectLargeVehicleData':
                 if cfg['random_alpha_y_channel']:
                     cfg['experiment_name'] = f'random_alpha_inject_{prob}_ycbcr_120'
