@@ -146,10 +146,11 @@ class InjectLargeVehicleData(BaseTransform):
         type - the type of injection
     """
 
-    def __init__(self, prob, base_path, injection_type) -> None:
+    def __init__(self, prob, base_path, injection_type, random_alpha_y_channel=False) -> None:
         self.prob = prob
         self.base_path = base_path
         self.injection_type = injection_type
+        self.random_alpha_y_channel = random_alpha_y_channel
 
     def get_files(self, folder_path):
 
@@ -198,9 +199,18 @@ class InjectLargeVehicleData(BaseTransform):
                 Image.fromarray((sampled_seg * dota_np).astype(np.uint8)).convert('YCbCr')
             )
 
+            if self.random_alpha_y_channel:
+                alpha = np.random.uniform(0, 1)
+                # Modified line to blend Y channels using alpha
+                blended_y_channel = (alpha * yuv_origin[:, :, 0][:, :, None].astype(np.float32) + 
+                                    (1 - alpha) * sim_images_ycbcr[:, :, 0][:, :, None].astype(np.float32)).astype(np.uint8)
+            else:
+                blended_y_channel = yuv_origin[:, :, 0][:, :, None]
+
+
             new_obj_im = np.concatenate(
                 [
-                    yuv_origin[:, :, 0][:, :, None],
+                    blended_y_channel,
                     sim_images_ycbcr[:, :, 1:],
                 ],
                 axis=2,
