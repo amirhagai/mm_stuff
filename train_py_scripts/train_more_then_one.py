@@ -123,7 +123,7 @@ def main():
 
     cfg.resume = args.resume
 
-    for prob in [0.8, 0.9, 1]:
+    for prob in [0., 0.1]:
 
         ind = 0
         for i in range(len(cfg['train_pipeline'])):
@@ -145,6 +145,7 @@ def main():
 
         import time
         start = time.time()
+        setattr(runner, 'train_val_loop_flag',  True)
         # start training
         runner.train()
         end = time.time()
