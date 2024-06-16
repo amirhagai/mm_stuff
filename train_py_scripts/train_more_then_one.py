@@ -145,7 +145,7 @@ def main():
 
         import time
         start = time.time()
-        setattr(runner, 'train_val_loop_flag',  True)
+        # setattr(runner, 'train_val_loop_flag',  True)
         # start training
         runner.train()
         end = time.time()
