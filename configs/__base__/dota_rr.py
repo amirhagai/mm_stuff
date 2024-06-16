@@ -8,7 +8,7 @@ custom_imports = dict(imports=['transform.transforms'], allow_failed_imports=Fal
 
 # dataset settings
 dataset_type = 'DOTADataset'
-data_root = 'data/split_ss_dota/fast_test'
+data_root = 'data/split_ss_dota/'
 
 backend_args = None
 
@@ -18,7 +18,6 @@ train_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
     dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
     dict(type='ConvertBoxType', box_type_mapping=dict(gt_bboxes='rbox')),
-    dict(type='InjectLargeVehicleData', prob=0., base_path="/data/split_ss_dota/train_injected_container", injection_type="ycbcr", random_alpha_y_channel=True),
     dict(type='mmdet.Resize', scale=(size, size), keep_ratio=True),
     dict(
         type='mmdet.RandomFlip',

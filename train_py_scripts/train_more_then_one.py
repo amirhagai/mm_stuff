@@ -123,17 +123,23 @@ def main():
 
     cfg.resume = args.resume
 
-    for prob in [0., 0.1]:
+    for prob in [0.2, 0.4, 0.6, 0.8]:
 
-        ind = 0
+        ind = -1
         for i in range(len(cfg['train_pipeline'])):
-            if cfg['train_pipeline'][i]['type'] == 'InjectLargeVehicleData':
+            if cfg['train_pipeline'][i]['type'] == 'InjectLargeVehicleData' or cfg['train_pipeline'][i]['type'] == 'BboxColorJitter':
                 ind = i
                 break
-        print(ind)
-        cfg['train_pipeline'][ind]['prob'] = prob
-        cfg['train_dataloader']['dataset']['pipeline'][ind]['prob'] = prob
-        cfg['experiment_name'] = f"inject_{prob}_ycbcr_120"
+        if ind != - 1:
+            cfg['train_pipeline'][ind]['prob'] = prob
+            cfg['train_dataloader']['dataset']['pipeline'][ind]['prob'] = prob
+            if cfg['train_pipeline'][i]['type'] == 'InjectLargeVehicleData':
+                if cfg['random_alpha_y_channel']:
+                    cfg['experiment_name'] = f'random_alpha_inject_{prob}_ycbcr_120'
+                else:
+                    cfg['experiment_name'] = f"inject_{prob}_ycbcr_120"
+            else:
+                cfg['experiment_name'] = f"bbox_color_jitter_{prob}_ycbcr_120"
         # build the runner from config
         if "runner_type" not in cfg:
             # build the default runner
@@ -145,7 +151,7 @@ def main():
 
         import time
         start = time.time()
-        # setattr(runner, 'train_val_loop_flag',  True)
+        setattr(runner, 'train_val_loop_flag',  True)
         # start training
         runner.train()
         end = time.time()

@@ -1,6 +1,5 @@
-
-# import sys 
-# sys.path.append('/mm_stuff')
+import sys 
+sys.path.append('/mm_stuff')
 # custom_imports = dict(imports=['converters.converter1'], allow_failed_imports=False)
 # conv = dict(type='Converter1', a=5, b=6)
 custom_imports = dict(imports=['transform.transforms'], allow_failed_imports=False)
@@ -8,17 +7,17 @@ custom_imports = dict(imports=['transform.transforms'], allow_failed_imports=Fal
 
 # dataset settings
 dataset_type = 'DOTADataset'
-data_root = 'data/split_ss_dota/fast_test'
-
+data_root = 'data/split_ms_dota/'
 backend_args = None
 
 
 size = 512
+
 train_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
     dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
     dict(type='ConvertBoxType', box_type_mapping=dict(gt_bboxes='rbox')),
-    dict(type='InjectLargeVehicleData', prob=0., base_path="/data/split_ss_dota/train_injected_container", injection_type="ycbcr", random_alpha_y_channel=True),
+    dict(type='BboxColorJitter2', prob=.8),
     dict(type='mmdet.Resize', scale=(size, size), keep_ratio=True),
     dict(
         type='mmdet.RandomFlip',
@@ -88,7 +87,7 @@ val_dataloader = dict(
         pipeline=val_pipeline))
 test_dataloader = val_dataloader
 
-val_evaluator = dict(type='DOTAMetric', metric='mAP', iou_thrs=[0.1, 0.5, 0.8])
+val_evaluator = dict(type='DOTAMetric', metric='mAP')
 test_evaluator = val_evaluator
 
 # inference on test dataset and format the output results
