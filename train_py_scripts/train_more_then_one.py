@@ -140,6 +140,8 @@ def main():
                     cfg['experiment_name'] = f"inject_{prob}_ycbcr_120"
             else:
                 cfg['experiment_name'] = f"bbox_color_jitter_{prob}_ycbcr_120"
+        
+        cfg['default_hooks']['checkpoint']['out_dir'] = os.path.join(cfg['work_dir'], f"{cfg['experiment_name']}_checkpoints")
         # build the runner from config
         if "runner_type" not in cfg:
             # build the default runner
@@ -148,6 +150,7 @@ def main():
             # build customized runner from the registry
             # if 'runner_type' is set in the cfg
             runner = RUNNERS.build(cfg)
+
 
         import time
         start = time.time()

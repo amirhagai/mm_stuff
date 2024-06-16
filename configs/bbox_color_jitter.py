@@ -128,5 +128,5 @@ model = dict(
 )
 
 # batch_size = (2 GPUs) x (4 samples per GPU) = 8
-train_dataloader = dict(batch_size=1, num_workers=1)
+train_dataloader = dict(batch_size=4, num_workers=4)
 experiment_name = f'bbox_color_jitter_{prob}_ycbcr_120'
