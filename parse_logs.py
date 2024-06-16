@@ -386,7 +386,17 @@ def find_log_files_and_experiments(root_dir, rule):
                     : experiment_name.find("_120_epochs")
                 ]
                 log_files[os.path.join(subdir, file)] = experiment_name
-    return log_files
+    def extract_float_from_key(key):
+    # The regular expression matches 'inject_' followed by any number (float or int)
+        match = re.search(r'inject_([0-9]*\.?[0-9]+)_', key)
+        if match:
+            return float(match.group(1))
+        return 0  # Return 0 or some default float if no number is found (shouldn't happen with correct data)
+
+# Sorting the dictionary based on the extracted float value
+    sorted_log_files = dict(sorted(log_files.items(), key=lambda item: extract_float_from_key(item[0])))
+
+    return sorted_log_files
 
 
 def log_to_df(log_files, metrics):
@@ -411,6 +421,7 @@ def log_to_df(log_files, metrics):
     ]
 
     for filepath, exp_name in log_files.items():
+        exp_name = exp_name[:exp_name.find("_ycbcr")]
         data = parse_detailed_log_file(
             filepath, precision_in_met="precision" in metrics
         )
@@ -476,7 +487,7 @@ def plot_metrics_across_files(
                 ax.plot(
                     group_data["epoch"],
                     group_data[metric],
-                    label=exp_name[:30],
+                    label=exp_name,
                     marker="o",
                 )
             title = (
@@ -492,9 +503,9 @@ def plot_metrics_across_files(
             ax.set_ylim(bottom=-0.1, top=1.1)
 
     plt.tight_layout()
-    plt.savefig(f"/app/tools/figs/{name}_metrics_across_files.png")
+    plt.savefig(f"{name}_metrics_across_files.png")
     plt.savefig(
-        f"/app/tools/figs/{name}_metrics_across_files.pdf",
+        f"{name}_metrics_across_files.pdf",
         format="pdf",
         bbox_inches="tight",
     )
@@ -529,37 +540,37 @@ def main(root_directory):
 
     metrics = ["mAP", "ap", "recall", "precision"]
     log_files = find_log_files_and_experiments(
-        root_directory, rule=lambda x: "1200_epochs" in x
+        root_directory, rule=lambda x: "120" in x
     )
     data_all_classes = log_to_df(log_files, metrics)
     for key in keys_dict.keys():
         plot_metrics_across_files(
             data_all_classes,
             metrics=metrics,
-            name=f"{keys[key]}_1200_epochs_test",
+            name=f"{keys[key]}_120_epochs_test",
             plot_rows=len(metrics),
             plot_col=3,
             class_key=key,
         )
 
-    metrics = ["mAP", "ap", "recall"]
-    log_files = find_log_files_and_experiments(
-        root_directory, rule=lambda x: "120_epochs" in x
-    )
+    # metrics = ["mAP", "ap", "recall"]
+    # log_files = find_log_files_and_experiments(
+    #     root_directory, rule=lambda x: "120" in x
+    # )
 
-    log_files = find_log_files_and_experiments(
-        root_directory, rule=lambda x: "120_epochs" in x
-    )
-    data_all_classes = log_to_df(log_files, metrics)
-    for key in keys_dict.keys():
-        plot_metrics_across_files(
-            data_all_classes,
-            metrics=metrics,
-            name=f"{keys[key]}_120_epochs_full",
-            plot_rows=len(metrics),
-            plot_col=3,
-            class_key=key,
-        )
+    # log_files = find_log_files_and_experiments(
+    #     root_directory, rule=lambda x: "120" in x
+    # )
+    # data_all_classes = log_to_df(log_files, metrics)
+    # for key in keys_dict.keys():
+    #     plot_metrics_across_files(
+    #         data_all_classes,
+    #         metrics=metrics,
+    #         name=f"{keys[key]}_120_epochs_full",
+    #         plot_rows=len(metrics),
+    #         plot_col=3,
+    #         class_key=key,
+    #     )
 
     # log_files = find_log_files(root_directory)
     # all_data = pd.DataFrame()
@@ -573,5 +584,5 @@ def main(root_directory):
 
 
 if __name__ == "__main__":
-    root_directory = "/app/work_dirs/rotated_rtmdet_l-3x-dota"
+    root_directory = "/media/amir/HDD32/data_dota/work_dir"
     main(root_directory)
