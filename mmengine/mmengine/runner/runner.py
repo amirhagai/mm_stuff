@@ -289,6 +289,7 @@ class Runner:
         experiment_name: Optional[str] = None,
         cfg: Optional[ConfigType] = None,
     ):
+        self.train_val_loop_flag = False
         self._work_dir = osp.abspath(work_dir)
         mmengine.mkdir_or_exist(self._work_dir)
 
@@ -603,7 +604,7 @@ class Runner:
     @property
     def train_val_loop(self):
         """:obj:`BaseLoop`: A loop to run validation."""
-        if not self.train_val_loop:
+        if not self.train_val_loop_flag:
             return None
         if isinstance(self._val_loop, BaseLoop) or self._val_loop is None:
             return self._train_val_loop
@@ -1758,7 +1759,7 @@ class Runner:
             loop = self._val_loop 
             self._val_loop = self.build_val_loop(
                 self._val_loop)  # type: ignore
-            if self.train_vla_loop:
+            if self.train_val_loop_flag:
                 dataset = self._val_dataloader['dataset']
                 self._val_dataloader['dataset'] = self._train_dataloader['dataset']
                 self._val_dataloader['dataset']['pipeline'] = dataset['pipeline']
