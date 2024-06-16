@@ -603,6 +603,8 @@ class Runner:
     @property
     def train_val_loop(self):
         """:obj:`BaseLoop`: A loop to run validation."""
+        if not self.train_val_loop:
+            return None
         if isinstance(self._val_loop, BaseLoop) or self._val_loop is None:
             return self._train_val_loop
         else:
@@ -1756,12 +1758,13 @@ class Runner:
             loop = self._val_loop 
             self._val_loop = self.build_val_loop(
                 self._val_loop)  # type: ignore
-            dataset = self._val_dataloader['dataset']
-            self._val_dataloader['dataset'] = self._train_dataloader['dataset']
-            self._val_dataloader['dataset']['pipeline'] = dataset['pipeline']
-            self._train_val_loop = self.build_val_loop(
-                loop)  # type: ignore
-            self._val_dataloader['dataset'] = dataset
+            if self.train_vla_loop:
+                dataset = self._val_dataloader['dataset']
+                self._val_dataloader['dataset'] = self._train_dataloader['dataset']
+                self._val_dataloader['dataset']['pipeline'] = dataset['pipeline']
+                self._train_val_loop = self.build_val_loop(
+                    loop)  # type: ignore
+                self._val_dataloader['dataset'] = dataset
         # TODO: add a contextmanager to avoid calling `before_run` many times
         self.call_hook('before_run')
 
