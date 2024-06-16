@@ -453,7 +453,7 @@ def log_to_df(log_files, metrics):
 
 
 def plot_metrics_across_files(
-    data_all_classes, metrics, name="", plot_rows=3, plot_col=3, class_key=6
+    curr_df, metrics, name="", plot_rows=3, plot_col=3, class_key=6
 ):
     fig, axs = plt.subplots(plot_rows, plot_col, figsize=(18, 16))  # 9 plots
     # all_data = []
@@ -475,8 +475,6 @@ def plot_metrics_across_files(
 
     # all_data = pd.concat(all_data, ignore_index=True)
     # data_all_classes = [pd.concat(data_all_classes[i], ignore_index=True) for i in range(15)]
-
-    curr_df = data_all_classes[class_key].drop("class", axis=1)
 
     for i, iou in enumerate(sorted(curr_df["iou_thr"].unique())):
         for j, metric in enumerate(metrics):
@@ -516,8 +514,19 @@ def plot_metrics_across_files(
     #     plot_metrics_single_experiment(data=all_data, experiment_name=exp_name)
 
 
-def main(root_directory):
+def main(root_directory, rule):
 
+
+    def assign_set(group):
+        # If there are only three rows in the group, assume they are for validation
+        if len(group) == 3:
+            group['set'] = 'val'
+        else:
+            # Otherwise, assign the first three as 'val' and the rest as 'train'
+            group['set'] = ['val'] * 3 + ['train'] * 3
+        return group
+
+        
     keys = [
         "baseball-diamond",
         "basketball-court",
@@ -540,14 +549,31 @@ def main(root_directory):
 
     metrics = ["mAP", "ap", "recall", "precision"]
     log_files = find_log_files_and_experiments(
-        root_directory, rule=lambda x: "120" in x
+        root_directory, rule=rule
     )
     data_all_classes = log_to_df(log_files, metrics)
     for key in keys_dict.keys():
+
+        df = data_all_classes[key].drop("class", axis=1)
+        
+        df = df.groupby('epoch').apply(assign_set, include_groups=False)
+        val_df = df[df['set'] == 'val']
+        train_df = df[df['set'] == 'train']
+
+        if not train_df.empty:
+            plot_metrics_across_files(
+                train_df,
+                metrics=metrics,
+                name=f"{keys[key]}_120_epochs_train_data",
+                plot_rows=len(metrics),
+                plot_col=3,
+                class_key=key,
+            )
+
         plot_metrics_across_files(
-            data_all_classes,
+            val_df,
             metrics=metrics,
-            name=f"{keys[key]}_120_epochs_test",
+            name=f"{keys[key]}_120_epochs_test_data",
             plot_rows=len(metrics),
             plot_col=3,
             class_key=key,
@@ -584,5 +610,5 @@ def main(root_directory):
 
 
 if __name__ == "__main__":
-    root_directory = "/media/amir/HDD32/data_dota/work_dir"
-    main(root_directory)
+    root_directory = "/data/work_dir"
+    main(root_directory, rule=lambda x: "inject_0.2_ycbcr_120_20240616_134431" in x)
