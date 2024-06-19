@@ -121,7 +121,7 @@ model = dict(
         channel_attention=True,
         norm_cfg=dict(type='SyncBN'),
         act_cfg=dict(type='SiLU'),
-        in_channels=(max_n - min_n + 1) * 2 * 3 + 3
+        in_channels=3 + 3
         ),
     neck=dict(
         type='mmdet.CSPNeXtPAFPN',
