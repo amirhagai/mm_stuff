@@ -29,7 +29,7 @@ sys.path.append('/mm_stuff')
 
 #     )
 dataset_type = 'DOTADataset'
-data_root = 'data/split_ss_dota/'
+data_root = '/data/split_ss_dota/'
 num_classes_removed = 0 # len(_base_['ignore_classes'].split(' ')) if _base_['ignore_classes'] != '' else 0
 # trained_model_full_path = "/work_dirs/FT_rotated_rtmdet_l-3x-dota/epoch_2.pth"
 random_alpha_y_channel = True
