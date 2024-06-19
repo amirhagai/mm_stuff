@@ -12,6 +12,7 @@ from mmengine.utils import is_list_of
 import torch
 import os
 import re
+import torch.nn as nn
 from PIL import Image
 
 from torchvision.transforms import Compose, ToTensor, ColorJitter, ToPILImage
@@ -22,60 +23,126 @@ from pathlib import Path
 
 # use the registry to manage the module
 @TRANSFORMS.register_module()
-class BboxColorJitter2(BaseTransform):
-    """Color jitter only over bboxes
+class AddFourierChannels(BaseTransform):
+    """
+    Assumes that PackedDetInputs allready been applied 
+    following https://arxiv.org/pdf/2107.00630 appendix C
 
     """
 
-    def __init__(self, prob, brightness=0, contrast=0, saturation=0, hue=0.5, class_num=5 ) -> None:
-        self.prob = prob
-        # self.path = path
-        self.class_num = class_num 
-        self.brightness, self.contrast, self.saturation, self.hue = \
-            brightness, contrast, saturation, hue
-        self.transform_im = \
-                Compose([
-                ColorJitter(
-                brightness=self.brightness, contrast=self.contrast,\
-                      saturation=self.saturation, hue=self.hue),
+    def __init__(self, min_n=7, max_n=8) -> None:
+        self.min_n = min_n
+        self.max_n = max_n
+        
 
-            ])
-        self.transform_done_im = \
-            ToPILImage()
-    
-    def ann_to_bbox(anno_list):
-        """"
-        this is how the boxes that i get looks like if anno_list is the bbox given by the annotation file
-        """
-        cnt = np.int0(np.array(anno_list).reshape(4, 2))
-        cnt = cnt.reshape((4, 2))
-        rect = cv2.minAreaRect(cnt)
-        return torch.tensor([rect[0][0], rect[0][1], rect[1][0], rect[1][1], np.pi * rect[2] / 180])
+    def create_fourier_channels(self, img_tensor):
+        if img_tensor.max().item() > 1:
+            img_tensor = img_tensor / 255
 
+        with torch.no_grad():
+            img_tensor = img_tensor * 2 * np.pi  # Scale pixel values for trigonometric transformations
+            
+            # Create empty lists to collect new channels
+            sin_channels, cos_channels = [], []
 
-    def transform(self, results: dict) -> dict:
-    
-        recs = results['gt_bboxes'].tensor
-        labels = results['gt_bboxes_labels']
-        # print(labels, results["img_path"])
-        im_shape = results['img'].shape
-        boxes = []
-        for i, rec in enumerate(recs):
-            if labels[i] == self.class_num and random.random() < self.prob:
-                rec = (
-                    (rec[0].item(), rec[1].item()),
-                    (rec[2].item(), rec[3].item()),
-                        (rec[4].item() * 180 / np.pi)
-                    )         
-                box = cv2.boxPoints(rec)
-                box = np.int0(box)
-                boxes.append(box)
-        if len(boxes) > 0:
-            mask = np.ones(im_shape).astype(np.uint8)
-            cv2.drawContours(mask, boxes, -1, (255, 0, 0), thickness=cv2.FILLED)
-            indecis = np.where(mask == 255)
-            bbox_to_transform = results['img'][indecis[0], indecis[1], :].astype(np.float32) / 255.
-            transformed_tensor = self.transform_im(torch.tensor(bbox_to_transform.T[:, :, None]))
-            results['img'][indecis[0], indecis[1], :] = (transformed_tensor[:, :, 0].T.numpy() * 255).astype(np.uint8)
+            # Apply transformations
+            for n in range(self.min_n, self.max_n + 1):
+                sin_channel = torch.sin(2 ** n * img_tensor)
+                cos_channel = torch.cos(2 ** n * img_tensor)
+                sin_channels.append(sin_channel)
+                cos_channels.append(cos_channel)
+
+            # Concatenate original and new channels
+            new_tensor = torch.cat([*sin_channels, *cos_channels], dim=1 if len(img_tensor.shape) == 4 else 0)
+            return new_tensor
+
+    def transform(self, packed_results: dict) -> dict:
+
+        packed_results['inputs'] = \
+        torch.cat([packed_results['inputs'],
+        self.create_fourier_channels(packed_results['inputs'])],
+         dim=1 if len(packed_results['inputs'].shape)==4 else 0)
  
-        return results
+        return packed_results
+
+
+@TRANSFORMS.register_module()
+class AddGradAndLaplacianFast(BaseTransform):
+    """
+    happens over all the cahnnels toghther
+
+    """
+
+    def __init__(self) -> None:
+        sobel_x_kernel = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        self.sobel_x = nn.Conv2d(3, 1, kernel_size=(3, 3), padding=1, bias=False)
+        sobel_x_kernel = sobel_x_kernel.repeat(3, 1, 1, 1)
+        self.sobel_x.weight.data = sobel_x_kernel.reshape((1, 3, 3, 3))
+
+        # Sobel filter for detecting vertical gradients
+        sobel_y_kernel = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        self.sobel_y = nn.Conv2d(3, 1, kernel_size=(3, 3), padding=1, bias=False)
+        sobel_y_kernel = sobel_y_kernel.repeat(3, 1, 1, 1)
+        self.sobel_y.weight.data = sobel_y_kernel.reshape((1, 3, 3, 3))
+
+        # Laplacian kernel for detecting edges
+        laplacian_kernel = torch.tensor([[0, 1, 0], [1, -4, 1], [0, 1, 0]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        self.laplacian = nn.Conv2d(3, 3, kernel_size=(3, 3), padding=1, bias=False)
+        laplacian_kernel = laplacian_kernel.repeat(3, 1, 1, 1)
+        self.laplacian.weight.data = laplacian_kernel.reshape((1, 3, 3, 3))
+
+        
+
+    def create_grad_channels(self, img_tensor):
+        with torch.no_grad():
+            return torch.cat([self.sobel_x(img_tensor.to(torch.float32)) , self.sobel_y(img_tensor.to(torch.float32)), self.laplacian(img_tensor.to(torch.float32))], dim=1 if len(img_tensor.shape) == 4 else 0)
+
+    def transform(self, packed_results: dict) -> dict:
+
+        packed_results['inputs'] = \
+        torch.cat([packed_results['inputs'],
+        self.create_grad_channels(packed_results['inputs'])],
+          dim=1 if len(packed_results['inputs'].shape) == 4 else 0)
+ 
+        return packed_results
+
+
+@TRANSFORMS.register_module()
+class AddGradAndLaplacian(BaseTransform):
+    """
+    
+
+    """
+
+    def __init__(self, min_n=7, max_n=8) -> None:
+        sobel_x_kernel = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        sobel_x_kernel = sobel_x_kernel.repeat(3, 1, 1, 1)
+        self.sobel_x = nn.Conv2d(3, 3, kernel_size=(3, 3), padding=1, groups=3, bias=False)
+        self.sobel_x.weight.data = sobel_x_kernel
+
+        # Sobel filter for detecting vertical gradients
+        sobel_y_kernel = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        sobel_y_kernel = sobel_y_kernel.repeat(3, 1, 1, 1)
+        self.sobel_y = nn.Conv2d(3, 3, kernel_size=(3, 3), padding=1, groups=3, bias=False)
+        self.sobel_y.weight.data = sobel_y_kernel
+
+        # Laplacian kernel for detecting edges
+        laplacian_kernel = torch.tensor([[0, 1, 0], [1, -4, 1], [0, 1, 0]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+
+        laplacian_kernel = laplacian_kernel.repeat(3, 1, 1, 1)
+        self.laplacian = nn.Conv2d(3, 3, kernel_size=(3, 3), padding=1, groups=3, bias=False)
+        self.laplacian.weight.data = laplacian_kernel
+
+
+    def create_grad_channels(self, img_tensor):
+        with torch.no_grad():
+            return torch.cat([self.sobel_x(img_tensor.to(torch.float32)) , self.sobel_y(img_tensor.to(torch.float32)), self.laplacian(img_tensor.to(torch.float32))], dim=1 if len(img_tensor.shape) == 4 else 0)
+
+    def transform(self, packed_results: dict) -> dict:
+
+        packed_results['inputs'] = \
+        torch.cat([packed_results['inputs'],
+        self.create_grad_channels(packed_results['inputs'])],
+          dim=1 if len(packed_results['inputs'].shape) == 4 else 0)
+ 
+        return packed_results

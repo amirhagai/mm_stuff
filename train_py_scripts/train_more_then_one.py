@@ -123,7 +123,7 @@ def main():
 
     cfg.resume = args.resume
 
-    for prob in [0.2, 0.4, 0.6, 0.8]:
+    for prob in [0.6, 0.8]:
 
         ind = -1
         for i in range(len(cfg['train_pipeline'])):
