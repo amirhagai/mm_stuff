@@ -8,7 +8,7 @@ custom_imports = dict(imports=['transform.transforms'], allow_failed_imports=Fal
 
 # dataset settings
 dataset_type = 'DOTADataset'
-data_root = 'data/split_ss_dota/fast_test'
+data_root = '/data/split_ss_dota/fast_test'
 
 backend_args = None
 

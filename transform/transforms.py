@@ -6,6 +6,9 @@ import mmcv
 import numpy as np
 from mmcv.transforms import BaseTransform
 from mmcv.transforms.utils import cache_randomness
+from mmengine.structures import InstanceData, PixelData
+from mmdet.structures import DetDataSample
+from mmcv.transforms import to_tensor
 from mmdet.structures.bbox import BaseBoxes, get_box_type
 from mmdet.structures.mask import PolygonMasks
 from mmengine.utils import is_list_of
@@ -114,7 +117,7 @@ class AddGradAndLaplacian(BaseTransform):
 
     """
 
-    def __init__(self, min_n=7, max_n=8) -> None:
+    def __init__(self) -> None:
         sobel_x_kernel = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
         sobel_x_kernel = sobel_x_kernel.repeat(3, 1, 1, 1)
         self.sobel_x = nn.Conv2d(3, 3, kernel_size=(3, 3), padding=1, groups=3, bias=False)
@@ -146,3 +149,6 @@ class AddGradAndLaplacian(BaseTransform):
           dim=1 if len(packed_results['inputs'].shape) == 4 else 0)
  
         return packed_results
+
+
+

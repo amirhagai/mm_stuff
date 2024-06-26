@@ -23,30 +23,6 @@ from mmrotate.registry import TRANSFORMS
 from pathlib import Path
 
 
-from numbers import Number
-from typing import List, Optional, Union
-import random
-import cv2
-import mmcv
-import numpy as np
-from mmcv.transforms import BaseTransform
-from mmcv.transforms.utils import cache_randomness
-from mmengine.structures import InstanceData, PixelData
-from mmdet.structures import DetDataSample
-from mmcv.transforms import to_tensor
-from mmdet.structures.bbox import BaseBoxes, get_box_type
-from mmdet.structures.mask import PolygonMasks
-from mmengine.utils import is_list_of
-import torch
-import os
-import re
-import torch.nn as nn
-from PIL import Image
-
-from mmrotate.registry import TRANSFORMS
-from pathlib import Path
-
-
 
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
@@ -54,15 +30,12 @@ import inspect
 import math
 from typing import List, Optional, Sequence, Tuple, Union
 
-import cv2
-import mmcv
-import numpy as np
+
 from mmcv.image.geometric import _scale_size
-from mmcv.transforms import BaseTransform
 from mmcv.transforms import Pad as MMCV_Pad
 from mmcv.transforms import RandomFlip as MMCV_RandomFlip
 from mmcv.transforms import Resize as MMCV_Resize
-from mmcv.transforms.utils import avoid_cache_randomness, cache_randomness
+from mmcv.transforms.utils import avoid_cache_randomness
 from mmengine.dataset import BaseDataset
 from mmengine.utils import is_str
 from numpy import random
@@ -80,6 +53,31 @@ except ImportError:
 
 
 Number = Union[int, float]
+
+# from numbers import Number
+# from typing import List, Optional, Union
+# import random
+# import cv2
+# import mmcv
+# import numpy as np
+# from mmcv.transforms import BaseTransform
+# from mmcv.transforms.utils import cache_randomness
+# from mmengine.structures import InstanceData, PixelData
+# from mmdet.structures import DetDataSample
+# from mmcv.transforms import to_tensor
+# from mmdet.structures.bbox import BaseBoxes, get_box_type
+# from mmdet.structures.mask import PolygonMasks
+# from mmengine.utils import is_list_of
+# import torch
+# import os
+# import re
+# import torch.nn as nn
+# from PIL import Image
+
+# from mmrotate.registry import TRANSFORMS
+# from pathlib import Path
+
+
 
 
 
