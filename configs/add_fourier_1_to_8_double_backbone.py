@@ -6,18 +6,20 @@ import sys
 sys.path.append('/mm_stuff')
 # custom_imports = dict(imports=['converters.converter1'], allow_failed_imports=False)
 # conv = dict(type='Converter1', a=5, b=6)
-custom_imports = dict(imports=['transform.transforms', 'backbones_channels.cspnext_ch', 'backbones_channels.data_preprocess'], allow_failed_imports=False)
+custom_imports = dict(imports=['transform.transforms', 'backbones_channels.cspnext_ch', 'backbones_channels.data_preprocess', 'backbones_grad.cspNextGrad', 'detectors_double_backbone'], allow_failed_imports=False)
 
 
 # dataset settings
 dataset_type = 'DOTADataset'
-data_root = 'data/split_ss_dota/'
+data_root = '/data/split_ss_dota/'
 
 backend_args = None
 
-min_n=7
+min_n=1
 max_n=8
-size = 512
+size = 1024
+batch_size = 8
+num_workers = 8
 train_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
     dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
@@ -66,8 +68,8 @@ test_pipeline = [
     dict(type='AddFourierChannels', min_n=min_n, max_n=max_n)
 ]
 train_dataloader = dict(
-    batch_size=4,
-    num_workers=4,
+    batch_size=batch_size,
+    num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     batch_sampler=None,
@@ -80,8 +82,8 @@ train_dataloader = dict(
         filter_cfg=dict(filter_empty_gt=True),
         pipeline=train_pipeline))
 val_dataloader = dict(
-    batch_size=4,
-    num_workers=4,
+    batch_size=batch_size,
+    num_workers=num_workers,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -104,7 +106,7 @@ test_evaluator = val_evaluator
 
 angle_version = 'le90'
 model = dict(
-    type='mmdet.RTMDet',
+    type='RTMDetDouble',
     data_preprocessor=dict(
         type='DetDataPreprocessorCh',
         mean=[103.53, 116.28, 123.675],
@@ -112,7 +114,17 @@ model = dict(
         bgr_to_rgb=False,
         boxtype2tensor=False,
         batch_augments=None),
-    backbone=dict(
+    backbone1=dict(
+        type='mmdet.CSPNeXt',
+        arch='P5',
+        expand_ratio=0.5,
+        deepen_factor=1,
+        widen_factor=1,
+        channel_attention=True,
+        norm_cfg=dict(type='SyncBN'),
+        act_cfg=dict(type='SiLU'),
+        ),
+    backbone2=dict(
         type='CSPNeXtCh',
         arch='P5',
         expand_ratio=0.5,
@@ -121,7 +133,7 @@ model = dict(
         channel_attention=True,
         norm_cfg=dict(type='SyncBN'),
         act_cfg=dict(type='SiLU'),
-        in_channels=(max_n - min_n + 1) * 2 * 3 + 3
+        in_channels=(max_n - min_n + 1) * 2 * 3
         ),
     neck=dict(
         type='mmdet.CSPNeXtPAFPN',
@@ -175,4 +187,4 @@ model = dict(
 
 # batch_size = (2 GPUs) x (4 samples per GPU) = 8
 # train_dataloader = dict(batch_size=1, num_workers=1)
-experiment_name = 'fourier_bs_1'
+experiment_name = 'AddFourier1To8Double'

@@ -281,6 +281,8 @@ class DetDataPreprocessorContrastive(ImgDataPreprocessorContrastive):
         """
         batch_pad_shape = self._get_pad_shape(data)
         data = super().forward(data=data, training=training, key='inputs')
+        if 'transformed' not in data:
+            data['transformed'] = data['inputs'].clone().detach()
         data = super().forward(data=data, training=training, key='transformed')
         inputs, inputs_transformed, data_samples = data['inputs'],data['transformed'], data['data_samples']
 

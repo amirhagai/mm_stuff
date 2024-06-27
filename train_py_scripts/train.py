@@ -122,6 +122,7 @@ def main():
         # if 'runner_type' is set in the cfg
         runner = RUNNERS.build(cfg)
 
+    runner.train_val_loop_flag = True
     # start training
     model = runner.train()
     print()

@@ -8,30 +8,31 @@ custom_imports = dict(imports=['transform.transforms'], allow_failed_imports=Fal
 
 # dataset settings
 dataset_type = 'DOTADataset'
-data_root = 'data/split_ss_dota/'
+data_root = '/data/split_ss_dota/fast_test'
 
 backend_args = None
 
 
-size = 1024
+size = 512
 train_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
     dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
     dict(type='ConvertBoxType', box_type_mapping=dict(gt_bboxes='rbox')),
-    dict(type='mmdet.Resize', scale=(size, size), keep_ratio=True),
+    dict(type='BboxColorJitterContrastive', prob=1.,class_num=4),
+    dict(type='MMDetResizeContrastive', scale=(size, size), keep_ratio=True),
     dict(
-        type='mmdet.RandomFlip',
+        type='RandomFlipContrastive',
         prob=0.75,
         direction=['horizontal', 'vertical', 'diagonal']),
     dict(
-        type='RandomRotate',
+        type='RandomRotateContrastive',
         prob=0.5,
         angle_range=180,
         rect_obj_labels=[9, 11]),
     dict(
-        type='mmdet.Pad', size=(size, size),
+        type='PadContrastive', size=(size, size),
         pad_val=dict(img=(114, 114, 114))),
-    dict(type='mmdet.PackDetInputs')
+    dict(type='PackDetInputsContrastive')
 ]
 val_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
@@ -85,7 +86,22 @@ val_dataloader = dict(
         data_prefix=dict(img_path='val/images/'),
         test_mode=True,
         pipeline=val_pipeline))
-test_dataloader = val_dataloader
+
+
+test_dataloader = dict(
+    batch_size=8,
+    num_workers=8,
+    persistent_workers=True,
+    sampler=dict(type='DefaultSampler', shuffle=True),
+    batch_sampler=None,
+    pin_memory=False,
+    dataset=dict(
+        type=dataset_type,
+        data_root=data_root,
+        ann_file='val/annfiles/',
+        data_prefix=dict(img_path='val/images/'),
+        filter_cfg=dict(filter_empty_gt=True),
+        pipeline=val_pipeline))
 
 val_evaluator = dict(type='DOTAMetric', metric='mAP', iou_thrs=[0.1, 0.5, 0.8])
 test_evaluator = val_evaluator

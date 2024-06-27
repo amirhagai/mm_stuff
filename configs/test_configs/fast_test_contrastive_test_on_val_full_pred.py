@@ -1,19 +1,21 @@
 _base_ = [
-    './_base_/default_runtime.py', './_base_/schedule_3x.py',
-    './_base_/dota_rr.py'
+    './__base_fast__/default_runtime.py', './__base_fast__/schedule_3x.py',
+    './__base_fast__/dota_rr_con_test_on_val.py'
 ]
-# checkpoint =  'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
-checkpoint = '/root/.cache/torch/hub/checkpoints/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'
+checkpoint =  'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
+# checkpoint = '/root/.cache/torch/hub/checkpoints/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'
 
 import sys 
 sys.path.append('/mm_stuff')
+
+custom_imports = dict(imports=['contrastive_support', 'transform.transforms'], allow_failed_imports=False)
 # from transform.transforms import *
 # from backbones_grad.cspNextGrad import *
 
 # custom_imports = dict(imports=['converters.converter1'], allow_failed_imports=False)
 # conv = dict(type='Converter1', a=5, b=6)
 # custom_imports = dict(imports=['backbones_grad'], allow_failed_imports=False)
-custom_imports = dict(imports=['transform.transforms', 'backbones_grad.cspNextGrad'], allow_failed_imports=False)
+# custom_imports = dict(imports=['transform.transforms', 'backbones_grad.cspNextGrad'], allow_failed_imports=False)
 # custom_imports = dict(imports=['backbones_grad.cspNextGrad'], allow_failed_imports=False)
 # custom_imports = dict(imports=['transform.transforms', 'backbones_grad.cspNextGrad', 'transform', 'backbones_grad'], allow_failed_imports=False)
 
@@ -29,12 +31,15 @@ custom_imports = dict(imports=['transform.transforms', 'backbones_grad.cspNextGr
 
 #     )
 
+num_classes_removed = 0 # len(_base_['ignore_classes'].split(' ')) if _base_['ignore_classes'] != '' else 0
+trained_model_full_path = "/work_dirs/FT_rotated_rtmdet_l-3x-dota/epoch_2.pth"
 
+random_alpha_y_channel=False
 angle_version = 'le90'
 model = dict(
-    type='mmdet.RTMDet',
+    type='RTMDetContrastive',
     data_preprocessor=dict(
-        type='mmdet.DetDataPreprocessor',
+        type='DetDataPreprocessorContrastive',
         mean=[103.53, 116.28, 123.675],
         std=[57.375, 57.12, 58.395],
         bgr_to_rgb=False,
@@ -61,8 +66,8 @@ model = dict(
         norm_cfg=dict(type='SyncBN'),
         act_cfg=dict(type='SiLU')),
     bbox_head=dict(
-        type='RotatedRTMDetSepBNHead',
-        num_classes=15,
+        type='RotatedRTMDetSepBNHeadContrastive',
+        num_classes=15 - num_classes_removed,
         in_channels=256,
         stacked_convs=2,
         feat_channels=256,
@@ -98,10 +103,10 @@ model = dict(
         nms_pre=2000,
         min_bbox_size=0,
         score_thr=0.05,
-        nms=dict(type='nms_rotated', iou_threshold=0.1),
+        nms=dict(type='nms_rotated', iou_threshold=1),
         max_per_img=2000),
 )
 
 # batch_size = (2 GPUs) x (4 samples per GPU) = 8
-train_dataloader = dict(batch_size=4, num_workers=4)
-experiment_name = 'normal_train_full_size'
+train_dataloader = dict(batch_size=1, num_workers=1)
+experiment_name = ''

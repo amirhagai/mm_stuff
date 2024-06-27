@@ -146,8 +146,8 @@ class SingleStageDetector(BaseDetector):
             tuple[Tensor]: Multi-level features that may have
             different resolutions.
         """
-        x1 = self.backbone1(batch_inputs)
-        x2 = self.backbone2(batch_inputs)
+        x1 = self.backbone1(batch_inputs[:, :3, :, :]) # image
+        x2 = self.backbone2(batch_inputs[:, 3:, :, :]) # added channels 
         arr = []
         for i in range(len(x1)):
             arr.append(x1[i] + x2[i])

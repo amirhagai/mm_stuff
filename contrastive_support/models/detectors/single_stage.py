@@ -2,7 +2,7 @@
 from typing import List, Tuple, Union
 
 from torch import Tensor
-
+import torch
 from mmdet.registry import MODELS
 from mmdet.structures import OptSampleList, SampleList
 from mmdet.utils import ConfigType, OptConfigType, OptMultiConfig
@@ -147,6 +147,11 @@ class SingleStageDetectorContrastive(BaseDetectorContrastive):
             dict: A dictionary of loss components.
         """
         x = self.extract_feat(batch_inputs)
-        x_transformed = self.extract_feat(batch_inputs_transformed)
+        with torch.no_grad():
+            transformed_falg = (batch_inputs != batch_inputs_transformed).sum() > 0
+        if transformed_falg :
+            x_transformed = self.extract_feat(batch_inputs_transformed)
+        else:
+            x_transformed = None
         losses = self.bbox_head.loss(x, x_transformed, batch_data_samples)
         return losses

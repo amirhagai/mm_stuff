@@ -3,7 +3,7 @@ from mmdet.structures import SampleList
 from typing import Tuple
 from torch import Tensor
 from mmdet.models.dense_heads.base_dense_head import BaseDenseHead
-
+import torch.nn.functional as F
 from mmdet.models.utils import unpack_gt_instances
 
 
@@ -36,7 +36,16 @@ class BaseDenseHeadContrastive(BaseDenseHead):
                               batch_gt_instances_ignore)
         losses = self.loss_by_feat(*loss_inputs)
 
-        mse_loss = torch.nn.MSELoss()
-        losses["contrastive"] = (mse_loss(x[i], x_transformed[i]) for i in range(len(x))).sum()
+        # mse_loss = torch.nn.MSELoss()
+
+        if x_transformed is not None:
+            total_loss = torch.tensor(0.0, requires_grad=True)
+
+            # Compute MSE loss for each pair of corresponding elements in x and x_transformed
+            for i in range(len(x)):
+                # mse_loss can be calculated using F.mse_loss which expects tensor inputs
+                loss = F.mse_loss(x[i], x_transformed[i], reduction='mean')
+                total_loss = total_loss + loss  # Accumulate the loss
+            losses["contrastive"] = total_loss
         return losses
 

@@ -18,6 +18,34 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": ["/mm_stuff/configs/fast_test_contrastive.py", "--device", "cuda:0"]
+        },{
+            "name": "Python Debugger: fast_test_contrastive test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": ["/mm_stuff/configs/fast_test_contrastive.py", "/mm_stuff/work_dirs/fast_test_contrastive/epoch_71.pth", "--show-dir", "results"]
+        },{
+            "name": "Python Debugger: fourier cuda 0",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": ["/mm_stuff/configs/add_fourier_1_to_8_double_backbone.py", "--device", "cuda:0"]
+        },{
+            "name": "Python Debugger: slow grad double",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": ["/mm_stuff/configs/add_grad_slow_double.py", "--device", "cuda:0"]
+        },{
+            "name": "Python Debugger: fast grad double",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": ["/mm_stuff/configs/add_grad_fast_double.py", "--device", "cuda:0"]
         }
     ]
 }
