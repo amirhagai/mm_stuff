@@ -840,21 +840,21 @@ class RotatedRTMDetSepBNHead(RotatedRTMDetHead):
 
             for cls_layer in self.cls_convs[idx]:
                 cls_feat = cls_layer(cls_feat)
-            cls_score = self.rtm_cls[idx](cls_feat)
+            cls_score = self.rtm_cls[idx](cls_feat) # [bs, 15, image_size/stride[0], image_size/stride[0]]
 
             for reg_layer in self.reg_convs[idx]:
-                reg_feat = reg_layer(reg_feat)
+                reg_feat = reg_layer(reg_feat) # [bs, 256, image_size/stride[0], image_size/stride[0]]
 
             if self.with_objectness:
                 objectness = self.rtm_obj[idx](reg_feat)
                 cls_score = inverse_sigmoid(
                     sigmoid_geometric_mean(cls_score, objectness))
             if self.exp_on_reg:
-                reg_dist = self.rtm_reg[idx](reg_feat).exp() * stride[0]
+                reg_dist = self.rtm_reg[idx](reg_feat).exp() * stride[0] # [bs, 4, image_size/stride[0], image_size/stride[0]]
             else:
                 reg_dist = self.rtm_reg[idx](reg_feat) * stride[0]
 
-            angle_pred = self.rtm_ang[idx](reg_feat)
+            angle_pred = self.rtm_ang[idx](reg_feat) # [bs, 1, image_size/stride[0], image_size/stride[0]]
 
             cls_scores.append(cls_score)
             bbox_preds.append(reg_dist)

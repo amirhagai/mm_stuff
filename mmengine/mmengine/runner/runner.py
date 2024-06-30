@@ -2204,6 +2204,7 @@ class Runner:
                 prefix of uri corresponding backend. Defaults to None.
                 New in v0.2.0.
         """
+        out_dir = f"{out_dir}_checkpoints"
         if meta is None:
             meta = {}
         elif not isinstance(meta, dict):

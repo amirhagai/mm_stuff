@@ -22,6 +22,7 @@ class SingleStageDetector(BaseDetector):
                  backbone1: ConfigType,
                  backbone2: ConfigType,
                  neck: OptConfigType = None,
+                 fusion: OptConfigType = None,
                  bbox_head: OptConfigType = None,
                  train_cfg: OptConfigType = None,
                  test_cfg: OptConfigType = None,
@@ -33,6 +34,11 @@ class SingleStageDetector(BaseDetector):
         self.backbone2 = MODELS.build(backbone2)
         if neck is not None:
             self.neck = MODELS.build(neck)
+        if fusion is not None:
+            self.fusion = MODELS.build(fusion)
+            self.with_fusion = True
+        else:
+            self.with_fusion = False
         bbox_head.update(train_cfg=train_cfg)
         bbox_head.update(test_cfg=test_cfg)
         self.bbox_head = MODELS.build(bbox_head)
@@ -148,10 +154,14 @@ class SingleStageDetector(BaseDetector):
         """
         x1 = self.backbone1(batch_inputs[:, :3, :, :]) # image
         x2 = self.backbone2(batch_inputs[:, 3:, :, :]) # added channels 
-        arr = []
-        for i in range(len(x1)):
-            arr.append(x1[i] + x2[i])
+        
+        if self.with_fusion:
+            arr = self.fusion(x1, x2)
+        else:
+            arr = []
+            for i in range(len(x1)):
+                arr.append(x1[i] + x2[i])
         x = tuple(arr)
         if self.with_neck:
             x = self.neck(x)
-        return x
+        return x # [(bs, 256, image_size/8, image_size/8), (bs, 512, image_size/16, image_size/16), (bs, 1024, image_size/32, image_size/32)]

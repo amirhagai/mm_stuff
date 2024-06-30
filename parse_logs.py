@@ -482,6 +482,7 @@ def plot_metrics_across_files(
             for exp_name, group_data in curr_df[
                 curr_df["iou_thr"] == iou
             ].groupby("experiment"):
+                group_data.reset_index(inplace=True)    
                 ax.plot(
                     group_data["epoch"],
                     group_data[metric],
@@ -611,4 +612,4 @@ def main(root_directory, rule):
 
 if __name__ == "__main__":
     root_directory = "/data/work_dir"
-    main(root_directory, rule=lambda x: "inject_0.2_ycbcr_120_20240616_134431" in x)
+    main(root_directory, rule=lambda x: "AddFourier1To8Double_20240627_140619" in x)
