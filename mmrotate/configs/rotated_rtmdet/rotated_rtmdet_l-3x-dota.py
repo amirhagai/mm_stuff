@@ -2,8 +2,8 @@ _base_ = [
     './_base_/default_runtime.py', './_base_/schedule_3x.py',
     './_base_/dota_rr.py'
 ]
-# checkpoint =  'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
-checkpoint = '/root/.cache/torch/hub/checkpoints/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'
+checkpoint =  'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
+# checkpoint = '/root/.cache/torch/hub/checkpoints/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'
 
 import sys 
 sys.path.append('/mm_stuff')
@@ -103,5 +103,5 @@ model = dict(
 )
 
 # batch_size = (2 GPUs) x (4 samples per GPU) = 8
-train_dataloader = dict(batch_size=4, num_workers=4)
-experiment_name = 'normal_train_full_size'
+train_dataloader = dict(batch_size=8, num_workers=8)
+experiment_name = 'normal_train_512_size'

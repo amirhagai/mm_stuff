@@ -13,7 +13,7 @@ data_root = 'data/split_ss_dota/'
 backend_args = None
 
 
-size = 1024
+size = 512
 train_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
     dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
@@ -73,8 +73,8 @@ train_dataloader = dict(
         filter_cfg=dict(filter_empty_gt=True),
         pipeline=train_pipeline))
 val_dataloader = dict(
-    batch_size=1,
-    num_workers=2,
+    batch_size=8,
+    num_workers=8,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
