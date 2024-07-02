@@ -36,7 +36,8 @@ class RTMDetContrastive(SingleStageDetectorContrastive):
                  test_cfg: OptConfigType = None,
                  data_preprocessor: OptConfigType = None,
                  init_cfg: OptMultiConfig = None,
-                 use_syncbn: bool = True) -> None:
+                 use_syncbn: bool = True,
+                 use_head_also_over_backbone: bool = False) -> None:
         super().__init__(
             backbone=backbone,
             neck=neck,
@@ -44,7 +45,8 @@ class RTMDetContrastive(SingleStageDetectorContrastive):
             train_cfg=train_cfg,
             test_cfg=test_cfg,
             data_preprocessor=data_preprocessor,
-            init_cfg=init_cfg)
+            init_cfg=init_cfg,
+            use_head_also_over_backbone=use_head_also_over_backbone)
 
         # TODO： Waiting for mmengine support
         if use_syncbn and get_world_size() > 1:

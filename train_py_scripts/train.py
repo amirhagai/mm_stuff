@@ -3,13 +3,14 @@ import argparse
 import logging
 import os
 import os.path as osp
-
+import numpy as np
+import torch
 from mmdet.utils import register_all_modules as register_all_modules_mmdet
 from mmengine.config import Config, DictAction
 from mmengine.logging import print_log
 from mmengine.registry import RUNNERS
 from mmengine.runner import Runner
-
+import random
 from mmrotate.utils import register_all_modules
 from mmengine.device import set_device
 
@@ -59,6 +60,14 @@ def parse_args():
 
 
 def main():
+
+
+    torch.manual_seed(1)
+    np.random.seed(1)
+    random.seed(1)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
 
     args = parse_args()
     if args.device != "":

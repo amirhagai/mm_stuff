@@ -105,8 +105,9 @@ model = dict(
         score_thr=0.05,
         nms=dict(type='nms_rotated', iou_threshold=0.1),
         max_per_img=2000),
+    use_head_also_over_backbone=True,
 )
 
 # batch_size = (2 GPUs) x (4 samples per GPU) = 8
 train_dataloader = dict(batch_size=16, num_workers=1)
-experiment_name = 'contrastive_update'
+experiment_name = 'contrastive_head_over_backbone'

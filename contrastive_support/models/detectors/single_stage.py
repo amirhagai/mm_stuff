@@ -7,7 +7,9 @@ from mmdet.registry import MODELS
 from mmdet.structures import OptSampleList, SampleList
 from mmdet.utils import ConfigType, OptConfigType, OptMultiConfig
 from .base import BaseDetectorContrastive
-
+from ...visualiztions import *
+import torch.nn as nn
+import mmengine
 
 @MODELS.register_module()
 class SingleStageDetectorContrastive(BaseDetectorContrastive):
@@ -24,7 +26,8 @@ class SingleStageDetectorContrastive(BaseDetectorContrastive):
                  train_cfg: OptConfigType = None,
                  test_cfg: OptConfigType = None,
                  data_preprocessor: OptConfigType = None,
-                 init_cfg: OptMultiConfig = None) -> None:
+                 init_cfg: OptMultiConfig = None,
+                 use_head_also_over_backbone: bool = False) -> None:
         super().__init__(
             data_preprocessor=data_preprocessor, init_cfg=init_cfg)
         self.backbone = MODELS.build(backbone)
@@ -35,6 +38,11 @@ class SingleStageDetectorContrastive(BaseDetectorContrastive):
         self.bbox_head = MODELS.build(bbox_head)
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
+        self.use_head_also_over_backbone = use_head_also_over_backbone
+        if self.use_head_also_over_backbone:
+            self.conv1 = nn.Conv2d(kernel_size=3, in_channels=neck['in_channels'][1], out_channels=neck['out_channels'], padding=1)
+            self.conv2 = nn.Conv2d(kernel_size=3, in_channels=neck['in_channels'][2], out_channels=neck['out_channels'], padding=1)
+
 
     def _load_from_state_dict(self, state_dict: dict, prefix: str,
                               local_metadata: dict, strict: bool,
@@ -125,11 +133,61 @@ class SingleStageDetectorContrastive(BaseDetectorContrastive):
             tuple[Tensor]: Multi-level features that may have
             different resolutions.
         """
+
+        # def use_running_stats(m):
+        #     if isinstance(m, mmengine.model.utils._BatchNormXd):
+        #         m.track_running_stats = True
+
+        # # Function to revert BatchNorm layers back to learning mode
+        # def train_running_stats(m):
+        #     if isinstance(m, mmengine.model.utils._BatchNormXd):
+        #         m.track_running_stats = False
+
+
+        # # Apply to all BatchNorm layers
+        # self.backbone.apply(use_running_stats)
+        # self.neck.apply(use_running_stats)
+
         x = self.backbone(batch_inputs)
         if self.with_neck:
             x = self.neck(x)
+
+        # self.backbone.apply(train_running_stats)
+        # self.neck.apply(train_running_stats)
         return x
 
+    def extract_fine_feat(self, batch_inputs: Tensor) -> Tuple[Tensor]:
+        """Extract features.
+
+        Args:
+            batch_inputs (Tensor): Image tensor with shape (N, C, H ,W).
+
+        Returns:
+            tuple[Tensor]: Multi-level features that may have
+            different resolutions.
+        """
+
+        # def use_running_stats(m):
+        #     if isinstance(m, mmengine.model.utils._BatchNormXd):
+        #         m.track_running_stats = True
+
+        # # Function to revert BatchNorm layers back to learning mode
+        # def train_running_stats(m):
+        #     if isinstance(m, mmengine.model.utils._BatchNormXd):
+        #         m.track_running_stats = False
+
+
+        # # Apply to all BatchNorm layers
+        # self.backbone.apply(use_running_stats)
+        # self.neck.apply(use_running_stats)
+
+        x_backbone = self.backbone(batch_inputs)
+        if self.with_neck:
+            x_neck = self.neck(x_backbone)
+
+        # self.backbone.apply(train_running_stats)
+        # self.neck.apply(train_running_stats)
+        return x_backbone, x_neck
 
     def loss(self, batch_inputs: Tensor,
              batch_inputs_transformed: Tensor,
@@ -146,12 +204,51 @@ class SingleStageDetectorContrastive(BaseDetectorContrastive):
         Returns:
             dict: A dictionary of loss components.
         """
-        x = self.extract_feat(batch_inputs)
-        with torch.no_grad():
-            transformed_falg = (batch_inputs != batch_inputs_transformed).sum() > 0
-        if transformed_falg :
-            x_transformed = self.extract_feat(batch_inputs_transformed)
+
+        if not self.use_head_also_over_backbone:
+            x = self.extract_feat(batch_inputs)
+            with torch.no_grad():
+                transformed_falg = (batch_inputs != batch_inputs_transformed).sum() > 0
+            if transformed_falg :
+                x_transformed = self.extract_feat(batch_inputs_transformed)
+                # for i in range(len(batch_inputs)):
+                #     if (batch_inputs[i] != batch_inputs_transformed[i]).sum() > 0:
+                #         pca_diff(batch_inputs[i][None,...,], batch_inputs_transformed[i][None,...,], x[0][i][None,...,], x_transformed[0][i][None,...,], f'/mm_stuff/vis0_{i}.png')
+                #         pca_diff(batch_inputs[i][None,...,], batch_inputs_transformed[i][None,...,], x[1][i][None,...,], x_transformed[1][i][None,...,], f'/mm_stuff/vis1_{i}.png')
+                #         pca_diff(batch_inputs[i][None,...,], batch_inputs_transformed[i][None,...,], x[2][i][None,...,], x_transformed[2][i][None,...,], f'/mm_stuff/vis2_{i}.png')
+                # print()
+            else:
+                x_transformed = None
+            losses = self.bbox_head.loss(x, x_transformed, batch_data_samples)
         else:
-            x_transformed = None
-        losses = self.bbox_head.loss(x, x_transformed, batch_data_samples)
+            x_backbone, x_neck = self.extract_fine_feat(batch_inputs)
+            with torch.no_grad():
+                transformed_falg = (batch_inputs != batch_inputs_transformed).sum() > 0
+            if transformed_falg :
+                x_backbone_transformed, x_neck_transformed = self.extract_fine_feat(batch_inputs_transformed)
+                new_x = [x_backbone_transformed[0]]
+                new_x.append(self.conv1(x_backbone_transformed[1]))
+                new_x.append(self.conv2(x_backbone_transformed[2]))
+                x_backbone_transformed = tuple(new_x)
+
+            else:
+                x_backbone_transformed, x_neck_transformed = None, None
+
+            new_x = [x_backbone[0]]
+            new_x.append(self.conv1(x_backbone[1]))
+            new_x.append(self.conv2(x_backbone[2]))
+            x_backbone = tuple(new_x)
+
+
+            losses_backbone = self.bbox_head.loss(x_backbone, x_backbone_transformed, batch_data_samples)
+            losses_neck = self.bbox_head.loss(x_neck , x_neck_transformed, batch_data_samples)
+            losses = dict()
+            for key in losses_backbone.keys():
+                vals = []
+                if key == "contrastive":
+                    vals.append(0.5 * losses_backbone[key] + 0.5 * losses_neck[key])
+                else:
+                    for i in range(len(losses_backbone[key])):
+                        vals.append(0.2 * losses_backbone[key][i] + 0.8 * losses_neck[key][i])
+                losses[key] = vals
         return losses

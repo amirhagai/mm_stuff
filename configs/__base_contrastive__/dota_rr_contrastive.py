@@ -14,7 +14,7 @@ backend_args = None
 
 batch_size=8
 num_workers=8
-size = 1024
+size = 512
 train_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
     dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),

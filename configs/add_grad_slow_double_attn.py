@@ -9,15 +9,16 @@ sys.path.append('/mm_stuff')
 custom_imports = dict(imports=['transform.transforms', 'backbones_channels.cspnext_ch', 'backbones_channels.data_preprocess', 'backbones_grad.cspNextGrad', 'detectors_double_backbone'], allow_failed_imports=False)
 
 
+
 # dataset settings
 dataset_type = 'DOTADataset'
 data_root = '/data/split_ss_dota/'
 
 backend_args = None
 
-min_n=1
+min_n=7
 max_n=8
-size = 512
+size = 1024
 batch_size = 8
 num_workers = 8
 train_pipeline = [
@@ -38,7 +39,7 @@ train_pipeline = [
         type='mmdet.Pad', size=(size, size),
         pad_val=dict(img=(114, 114, 114))),
     dict(type='mmdet.PackDetInputs'),
-    dict(type='AddFourierChannels', min_n=min_n, max_n=max_n)
+    dict(type='AddGradAndLaplacian')
 ]
 val_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
@@ -53,7 +54,7 @@ val_pipeline = [
         type='mmdet.PackDetInputs',
         meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
                    'scale_factor')),
-    dict(type='AddFourierChannels', min_n=min_n, max_n=max_n)
+    dict(type='AddGradAndLaplacian')
 ]
 test_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
@@ -65,10 +66,10 @@ test_pipeline = [
         type='mmdet.PackDetInputs',
         meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
                    'scale_factor')),
-    dict(type='AddFourierChannels', min_n=min_n, max_n=max_n)
+    dict(type='AddGradAndLaplacian')
 ]
 train_dataloader = dict(
-    batch_size=batch_size,
+    batch_size=batch_size ,
     num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
@@ -81,8 +82,9 @@ train_dataloader = dict(
         data_prefix=dict(img_path='train/images/'),
         filter_cfg=dict(filter_empty_gt=True),
         pipeline=train_pipeline))
+
 val_dataloader = dict(
-    batch_size=batch_size,
+    batch_size=batch_size ,
     num_workers=num_workers,
     persistent_workers=True,
     drop_last=False,
@@ -133,7 +135,7 @@ model = dict(
         channel_attention=True,
         norm_cfg=dict(type='SyncBN'),
         act_cfg=dict(type='SiLU'),
-        in_channels=(max_n - min_n + 1) * 2 * 3
+        in_channels=3 * 3
         ),
     neck=dict(
         type='mmdet.CSPNeXtPAFPN',
@@ -192,4 +194,4 @@ model = dict(
 
 # batch_size = (2 GPUs) x (4 samples per GPU) = 8
 # train_dataloader = dict(batch_size=1, num_workers=1)
-experiment_name = 'AddFourier1To8DoubleAttn'
+experiment_name = 'AddGradAndLaplacianDouble'
