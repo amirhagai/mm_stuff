@@ -115,7 +115,8 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
-import os
+import os    
+import shutil
 import re
 
 # def find_log_files(root_dir):
@@ -128,32 +129,57 @@ import re
 #     return log_files
 
 
-def process_buffer(buffer, data, mAP):
-    for entry in buffer:
-        if entry["epoch"] in mAP and entry["iou_thr"] in mAP[entry["epoch"]]:
-            entry["mAP"] = mAP[entry["epoch"]][entry["iou_thr"]]
-            data.append(entry)
+def process_buffer(buffer, data, mAP_train, mAP_test):
+    len_keys = 0
+    for entry in mAP_test:
+        if mAP_test[entry] != {}:
+            len_keys = len(mAP_test[entry].keys())
+            break
+
+    if mAP_train is not None:
+        num_classes = int((len(buffer) / len_keys ) / 2)
+        for ij, entry in enumerate(buffer):
+
+            if ij < len_keys * num_classes:
+                if entry["epoch"] in mAP_test and entry["iou_thr"] in mAP_test[entry["epoch"]]:
+                    entry["mAP"] = mAP_test[entry["epoch"]][entry["iou_thr"]]   
+                data.append(entry)             
+            else:
+                if entry["epoch"] in mAP_train and entry["iou_thr"] in mAP_train[entry["epoch"]]:
+                    entry["mAP"] = mAP_train[entry["epoch"]][entry["iou_thr"]]
+
+                data.append(entry)
+    else:
+        for entry in buffer:
+            if entry["epoch"] in mAP_test and entry["iou_thr"] in mAP_test[entry["epoch"]]:
+                entry["mAP"] = mAP_test[entry["epoch"]][entry["iou_thr"]]
+                data.append(entry)        
 
 
 def parse_detailed_log_file_v2(filepath, precision_in_met=False):
     data = []
     current_epoch = None
     iou_thr = None
-    mAP = {}  # To store mAP values for each epoch and IoU
+    mAP_train = {}  # To store mAP values for each epoch and IoU
+    mAP_val = {}
+    mAP_train_flag = False
     buffer = []  # Buffer to store data temporarily
 
     with open(filepath, "r") as file:
         for line in file:
             if "Epoch(train)" in line:
                 if buffer:
-                    process_buffer(buffer, data, mAP)
+                    if mAP_train_flag:
+                        process_buffer(buffer, data, mAP_train, mAP_val)
+                    else:
+                        process_buffer(buffer, data, None, mAP_val)
                     buffer = []
 
                 epoch_match = re.search(r"Epoch\(train\)\s*\[(\d+)\]", line)
                 if epoch_match:
                     current_epoch = int(epoch_match.group(1))
-                    mAP[current_epoch] = {}
-
+                    mAP_train[current_epoch] = {}
+                    mAP_val[current_epoch] = {}
             if "iou_thr:" in line:
                 iou_match = re.search(r"iou_thr:\s*(\d+\.\d+)", line)
                 if iou_match:
@@ -165,11 +191,19 @@ def parse_detailed_log_file_v2(filepath, precision_in_met=False):
                     line,
                 )
                 if mAP_matches:
-                    mAP[current_epoch] = {
-                        "0.1": float(mAP_matches.group(2)),
-                        "0.5": float(mAP_matches.group(3)),
-                        "0.8": float(mAP_matches.group(4)),
-                    }
+                    if mAP_val[current_epoch] == {}:
+                        mAP_val[current_epoch] = {
+                            "0.1": float(mAP_matches.group(2)),
+                            "0.5": float(mAP_matches.group(3)),
+                            "0.8": float(mAP_matches.group(4)),
+                        }
+                    else:
+                        mAP_train_flag = True
+                        mAP_train[current_epoch] = {
+                            "0.1": float(mAP_matches.group(2)),
+                            "0.5": float(mAP_matches.group(3)),
+                            "0.8": float(mAP_matches.group(4)),
+                        }                        
 
             if (
                 current_epoch is not None
@@ -189,6 +223,9 @@ def parse_detailed_log_file_v2(filepath, precision_in_met=False):
                         gts, dets, recall, ap, precision = map(
                             str.strip, parts[2:buffer_entry_size]
                         )
+                        if precision == '':
+                            precision_in_met = False
+                            precision = 0
                     else:
                         gts, dets, recall, ap = map(
                             str.strip, parts[2:buffer_entry_size]
@@ -207,12 +244,15 @@ def parse_detailed_log_file_v2(filepath, precision_in_met=False):
                         }
                     )
 
-        process_buffer(buffer, data, mAP)
+        if mAP_train_flag:
+            process_buffer(buffer, data, mAP_train, mAP_val)
+        else:
+            process_buffer(buffer, data, None, mAP_val)
 
     df = pd.DataFrame(data)
     if not precision_in_met:
         df = df.drop("precision", axis=1)
-    return df
+    return df, precision_in_met
 
 
 def parse_detailed_log_file(filepath, precision_in_met=False):
@@ -282,6 +322,9 @@ def parse_detailed_log_file(filepath, precision_in_met=False):
                     gts, dets, recall, ap, precision = map(
                         str.strip, parts[2:buffer_entry_size]
                     )
+                    if precision == '':
+                        precision_in_met = False
+                        precision = 0
                 else:
                     gts, dets, recall, ap = map(
                         str.strip, parts[2:buffer_entry_size]
@@ -369,7 +412,7 @@ def plot_metrics_single_experiment(data, experiment_name):
     ax.set_title(f"Metrics Over Epochs for {experiment_name}")
     ax.set_xlabel("Epoch")
     ax.set_ylabel("Metric Value")
-    ax.legend()
+    ax.legend(loc='lower right', framealpha=0.1)
     ax.grid(True)
     plt.show()
 
@@ -382,9 +425,12 @@ def find_log_files_and_experiments(root_dir, rule):
                 experiment_name = subdir.split("/")[
                     -1
                 ]  # Assuming folder name is experiment name
-                experiment_name = experiment_name[
-                    : experiment_name.find("_120_epochs")
-                ]
+                if experiment_name.find("_2024") != -1:
+                    experiment_name = experiment_name[
+                        : experiment_name.find("_2024")
+                    ]
+                if not file.startswith('2024'):
+                    experiment_name = f"{experiment_name}_{file[:-4]}"
                 log_files[os.path.join(subdir, file)] = experiment_name
     def extract_float_from_key(key):
     # The regular expression matches 'inject_' followed by any number (float or int)
@@ -421,11 +467,11 @@ def log_to_df(log_files, metrics):
     ]
 
     for filepath, exp_name in log_files.items():
-        exp_name = exp_name[:exp_name.find("_ycbcr")]
+        # exp_name = exp_name[:exp_name.find("_ycbcr")]
         data = parse_detailed_log_file(
             filepath, precision_in_met="precision" in metrics
         )
-        df_all = parse_detailed_log_file_v2(
+        df_all, precision_in_met = parse_detailed_log_file_v2(
             filepath, precision_in_met="precision" in metrics
         )
         dfs = {
@@ -449,7 +495,7 @@ def log_to_df(log_files, metrics):
         pd.concat(data_all_classes[i], ignore_index=True) for i in range(15)
     ]
 
-    return data_all_classes
+    return data_all_classes, precision_in_met
 
 
 def plot_metrics_across_files(
@@ -502,7 +548,7 @@ def plot_metrics_across_files(
             ax.set_ylim(bottom=-0.1, top=1.1)
 
     plt.tight_layout()
-    plt.savefig(f"{name}_metrics_across_files.png")
+    # plt.savefig(f"{name}_metrics_across_files.png")
     plt.savefig(
         f"{name}_metrics_across_files.pdf",
         format="pdf",
@@ -515,7 +561,10 @@ def plot_metrics_across_files(
     #     plot_metrics_single_experiment(data=all_data, experiment_name=exp_name)
 
 
-def main(root_directory, rule):
+def main(root_directory, rule, plot_folder_name):
+    
+    os.makedirs(plot_folder_name, exist_ok=True)
+
 
 
     def assign_set(group):
@@ -552,20 +601,41 @@ def main(root_directory, rule):
     log_files = find_log_files_and_experiments(
         root_directory, rule=rule
     )
-    data_all_classes = log_to_df(log_files, metrics)
+    data_all_classes, precision_in_met = log_to_df(log_files, metrics)
+    if not precision_in_met:
+        metrics = ["mAP", "ap", "recall"]
     for key in keys_dict.keys():
+        if keys[key] != "large-vehicle":
+            continue
 
         df = data_all_classes[key].drop("class", axis=1)
         
-        df = df.groupby('epoch').apply(assign_set, include_groups=False)
-        val_df = df[df['set'] == 'val']
-        train_df = df[df['set'] == 'train']
+        # df = df.groupby(['epoch', 'experiment']).apply(assign_set, include_groups=False)
+        # val_df = df[df['set'] == 'val']
+        # train_df = df[df['set'] == 'train']
+        val_df = pd.DataFrame()
+        train_df = pd.DataFrame()
+        
+        experiments = df['experiment'].unique()
+        for exp in experiments:
+            exp_df = df[df['experiment'] == exp]
+            
+            # Group by 'epoch' and apply the function
+            exp_df = exp_df.groupby(['epoch'], group_keys=False).apply(assign_set)
+            
+            # Split into val and train DataFrames
+            exp_val_df = exp_df[exp_df['set'] == 'val']
+            exp_train_df = exp_df[exp_df['set'] == 'train']
+            
+            # Append to the respective master DataFrames
+            val_df = pd.concat([val_df, exp_val_df], ignore_index=True)
+            train_df = pd.concat([train_df, exp_train_df], ignore_index=True)
 
         if not train_df.empty:
             plot_metrics_across_files(
                 train_df,
                 metrics=metrics,
-                name=f"{keys[key]}_120_epochs_train_data",
+                name=f"{plot_folder_name}/{keys[key]}_120_epochs_train_data",
                 plot_rows=len(metrics),
                 plot_col=3,
                 class_key=key,
@@ -574,7 +644,7 @@ def main(root_directory, rule):
         plot_metrics_across_files(
             val_df,
             metrics=metrics,
-            name=f"{keys[key]}_120_epochs_test_data",
+            name=f"{plot_folder_name}/{keys[key]}_120_epochs_test_data",
             plot_rows=len(metrics),
             plot_col=3,
             class_key=key,
@@ -610,6 +680,39 @@ def main(root_directory, rule):
     #     plot_class_data(all_data, "Large-Vehicle")
 
 
+def delete_folders_with_fast_test(base_dir):
+    # Traverse through all directories in the base directory
+    for folder in os.listdir(base_dir):
+        folder_path = os.path.join(base_dir, folder)
+        if os.path.isdir(folder_path):
+            # Check each file in the directory
+            for file in os.listdir(folder_path):
+                if file.endswith(".log"):
+                    file_path = os.path.join(folder_path, file)
+                    with open(file_path, 'r') as f:
+                        # Read the file and search for the string
+                        if 'fast_test' in f.read():
+                            # Delete the folder if the string is found
+                            shutil.rmtree(folder_path)
+                            print(f"Deleted folder: {folder_path}")
+                            break  # Stop checking other files, proceed to next folder
+
+
 if __name__ == "__main__":
     root_directory = "/data/work_dir"
-    main(root_directory, rule=lambda x: "AddFourier1To8Double_20240627_140619" in x)
+    
+    for name in ['random_alpha_inject_ycbcr', 'full_simulation', 'standart_training', 'inject_ycbcr', 'fourier', 'extra_grads', 'contrastive', 'bbox_color_jitter']:
+        if name == 'inject_ycbcr':
+            rule = lambda x: name in x and 'v2' not in x and 'random_alpha' not in x
+        else:
+            rule = lambda x: name in x and 'v2' not in x 
+        main(root_directory, rule=rule, plot_folder_name=f'/data/work_dir/plots/{name}')
+        print(f"done - {name}", end='\n\n')
+    
+    # main(root_directory, rule=lambda x: "full_simulation" in x, plot_folder_name='/data/work_dir/plots/full_simulation')
+
+
+
+    # Specify the base directory
+    base_dir = "/data/work_dir/work_dirs/rotated_rtmdet_l-3x-dota"
+    # delete_folders_with_fast_test(base_dir)
