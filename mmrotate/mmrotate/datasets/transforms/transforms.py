@@ -146,11 +146,12 @@ class InjectLargeVehicleData(BaseTransform):
         type - the type of injection
     """
 
-    def __init__(self, prob, base_path, injection_type, random_alpha_y_channel=False) -> None:
+    def __init__(self, prob, base_path, injection_type, random_alpha_y_channel=False, leave_original_chroma=False) -> None:
         self.prob = prob
         self.base_path = base_path
         self.injection_type = injection_type
         self.random_alpha_y_channel = random_alpha_y_channel
+        self.leave_original_chroma = leave_original_chroma
 
     def get_files(self, folder_path):
 
@@ -187,10 +188,17 @@ class InjectLargeVehicleData(BaseTransform):
             return results
             
         sampled_images, sampled_segs = self.get_files(folder_path)
-        if len(sampled_images) == 0:
+        if (len(sampled_images) == 0) and not self.leave_original_chroma:
             return results
 
         if self.injection_type == 'ycbcr':
+            
+            if self.leave_original_chroma:
+                prob = self.prob
+                sampled_images, sampled_segs = self.get_files(folder_path)
+                self.prob = prob
+                
+                
             sampled_im = np.sum(np.array(sampled_images), axis=0)
             sim_images_ycbcr = np.array(Image.fromarray(sampled_im.astype(np.uint8)).convert('YCbCr'))
             sampled_seg = np.sum(np.array(sampled_segs), axis=0)
@@ -198,24 +206,40 @@ class InjectLargeVehicleData(BaseTransform):
             yuv_origin = np.array(
                 Image.fromarray((sampled_seg * dota_np).astype(np.uint8)).convert('YCbCr')
             )
+                
 
-            if self.random_alpha_y_channel:
-                alpha = np.random.uniform(0, 1)
-                # Modified line to blend Y channels using alpha
-                blended_y_channel = (alpha * yuv_origin[:, :, 0][:, :, None].astype(np.float32) + 
-                                    (1 - alpha) * sim_images_ycbcr[:, :, 0][:, :, None].astype(np.float32)).astype(np.uint8)
+            if self.leave_original_chroma:
+                dota_img = Image.fromarray(results['img'].astype(np.uint8))
+                dota_ycbcr = dota_img.convert('YCbCr')
+                sim_images_ycbcr = Image.fromarray(sim_images_ycbcr.astype(np.uint8)).convert('YCbCr')
+                d_y, d_cb, d_cr = dota_ycbcr.split()
+                s_y, s_cb, s_cr = sim_images_ycbcr.split()
+                sampled_seg_image = Image.fromarray((np.concatenate([sampled_seg, sampled_seg, sampled_seg], axis=2) * 255 * self.prob).astype(np.uint8)).convert('L')  # Mask image for blending
+                blended_y_channel = Image.composite(s_y, d_y, sampled_seg_image)
+                new_ycbcr = Image.merge('YCbCr', [blended_y_channel, d_cb, d_cr])
+                new_rgb = new_ycbcr.convert('RGB')
+                new_ycbcr = Image.merge('YCbCr', [d_y, s_cb, s_cr])
+                dota_np = np.array(new_ycbcr.convert('RGB'))      
+                
             else:
-                blended_y_channel = yuv_origin[:, :, 0][:, :, None]
+
+                if self.random_alpha_y_channel:
+                    alpha = np.random.uniform(0, 1)
+                    # Modified line to blend Y channels using alpha
+                    blended_y_channel = (alpha * yuv_origin[:, :, 0][:, :, None].astype(np.float32) + 
+                                        (1 - alpha) * sim_images_ycbcr[:, :, 0][:, :, None].astype(np.float32)).astype(np.uint8)
+                else:
+                    blended_y_channel = yuv_origin[:, :, 0][:, :, None]
 
 
-            new_obj_im = np.concatenate(
-                [
-                    blended_y_channel,
-                    sim_images_ycbcr[:, :, 1:],
-                ],
-                axis=2,
-            ).astype(np.uint8)[:, :, ::-1]
-            dota_np = (1 - sampled_seg) * dota_np + sampled_seg * new_obj_im
+                new_obj_im = np.concatenate(
+                    [
+                        blended_y_channel,
+                        sim_images_ycbcr[:, :, 1:],
+                    ],
+                    axis=2,
+                ).astype(np.uint8)[:, :, ::-1]
+                dota_np = (1 - sampled_seg) * dota_np + sampled_seg * new_obj_im
 
 
         elif self.injection_type == "simple":

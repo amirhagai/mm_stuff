@@ -1,6 +1,6 @@
 _base_ = [
-    './__base__/default_runtime.py', './__base__/schedule_3x.py',
-    './__base__/dota_rr.py'
+    './__base_injection__/default_runtime.py', './__base_injection__/schedule_3x.py',
+    './__base_injection__/dota_rr.py'
 ]
 checkpoint =  'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
 # checkpoint = '/root/.cache/torch/hub/checkpoints/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'
@@ -32,29 +32,7 @@ dataset_type = 'DOTADataset'
 data_root = '/data/split_ss_dota/'
 num_classes_removed = 0 # len(_base_['ignore_classes'].split(' ')) if _base_['ignore_classes'] != '' else 0
 # trained_model_full_path = "/work_dirs/FT_rotated_rtmdet_l-3x-dota/epoch_2.pth"
-random_alpha_y_channel = True
-size = 512
-injection_prob=0.
-train_pipeline = [
-    dict(type='mmdet.LoadImageFromFile', backend_args=_base_['backend_args']),
-    dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
-    dict(type='ConvertBoxType', box_type_mapping=dict(gt_bboxes='rbox')),
-    dict(type='InjectLargeVehicleData', prob=injection_prob, base_path="/data/split_ss_dota/train_injected_container", injection_type="ycbcr", random_alpha_y_channel=random_alpha_y_channel),
-    dict(type='mmdet.Resize', scale=(size, size), keep_ratio=True),
-    dict(
-        type='mmdet.RandomFlip',
-        prob=0.75,
-        direction=['horizontal', 'vertical', 'diagonal']),
-    dict(
-        type='RandomRotate',
-        prob=0.5,
-        angle_range=180,
-        rect_obj_labels=[9, 11]),
-    dict(
-        type='mmdet.Pad', size=(size, size),
-        pad_val=dict(img=(114, 114, 114))),
-    dict(type='mmdet.PackDetInputs')
-]
+
 
 
 angle_version = 'le90'
@@ -131,4 +109,6 @@ model = dict(
 
 # batch_size = (2 GPUs) x (4 samples per GPU) = 8
 train_dataloader = dict(batch_size=4, num_workers=4)
-experiment_name = f'random_alpha_inject_{injection_prob}_ycbcr_120'
+
+prob = _base_['injection_prob']
+experiment_name = f'random_alpha_inject_{prob}_ycbcr_120'
