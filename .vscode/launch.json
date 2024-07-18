@@ -68,6 +68,13 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": ["/mm_stuff/configs/contrastive_head_over_backbone.py", "--device", "cuda:0"]
+        },{
+            "name": "Python Debugger: color jitter prob 1 bs 1 cuda:0",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": ["/mm_stuff/configs/bbox_color_jitter.py", "--device", "cuda:0", "--cfg-options", "prob=1", "--cfg-options", "train_dataloader.dataset.pipeline.3.prob=1", "--cfg-options", "train_dataloader.batch_size=1"]
         }
 
     ]

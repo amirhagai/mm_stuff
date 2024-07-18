@@ -1,6 +1,6 @@
 _base_ = [
-    './__base__/default_runtime.py', './__base__/schedule_3x.py',
-    './__base__/dota_rr.py'
+    './__base_color_jitter__/default_runtime.py', './__base_color_jitter__/schedule_3x.py',
+    './__base_color_jitter__/dota_rr.py'
 ]
 checkpoint =  'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
 # checkpoint = '/root/.cache/torch/hub/checkpoints/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'
@@ -34,27 +34,7 @@ num_classes_removed = 0 # len(_base_['ignore_classes'].split(' ')) if _base_['ig
 # trained_model_full_path = "/work_dirs/FT_rotated_rtmdet_l-3x-dota/epoch_2.pth"
 random_alpha_y_channel = True
 size = 512
-prob=0.
-train_pipeline = [
-    dict(type='mmdet.LoadImageFromFile', backend_args=_base_['backend_args']),
-    dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
-    dict(type='ConvertBoxType', box_type_mapping=dict(gt_bboxes='rbox')),
-    dict(type='BboxColorJitter', prob=prob, brightness=.5, contrast=.5, saturation=.5, hue=.5),
-    dict(type='mmdet.Resize', scale=(size, size), keep_ratio=True),
-    dict(
-        type='mmdet.RandomFlip',
-        prob=0.75,
-        direction=['horizontal', 'vertical', 'diagonal']),
-    dict(
-        type='RandomRotate',
-        prob=0.5,
-        angle_range=180,
-        rect_obj_labels=[9, 11]),
-    dict(
-        type='mmdet.Pad', size=(size, size),
-        pad_val=dict(img=(114, 114, 114))),
-    dict(type='mmdet.PackDetInputs')
-]
+
 
 
 angle_version = 'le90'
@@ -131,4 +111,5 @@ model = dict(
 
 # batch_size = (2 GPUs) x (4 samples per GPU) = 8
 train_dataloader = dict(batch_size=4, num_workers=4)
-experiment_name = f'bbox_color_jitter_{prob}_ycbcr_120'
+p = _base_['prob']
+experiment_name = f'bbox_color_jitter_{p}_ycbcr_120'
