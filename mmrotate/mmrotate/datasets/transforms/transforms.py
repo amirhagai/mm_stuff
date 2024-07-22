@@ -152,6 +152,21 @@ class InjectLargeVehicleData(BaseTransform):
         self.injection_type = injection_type
         self.random_alpha_y_channel = random_alpha_y_channel
         self.leave_original_chroma = leave_original_chroma
+        
+                # Define the conversion matrix
+        self.rgb_to_ycbcr_conversion_matrix = np.array([[0.299, 0.587, 0.114],
+                                    [-0.168736, -0.331264, 0.5],
+                                    [0.5, -0.418688, -0.081312]])
+        # Add the offset matrix for Cb and Cr
+        self.offset = np.array([0, 128, 128])
+        
+                # Define the inverse conversion matrix
+        self.ycbcr_to_rgb_conversion_matrix = np.array([[1, 0, 1.402],
+                                    [1, -0.344136, -0.714136],
+                                    [1, 1.772, 0]])
+
+        
+        
 
     def get_files(self, folder_path):
 
@@ -175,6 +190,24 @@ class InjectLargeVehicleData(BaseTransform):
         sampled_images, sampled_segs = [np.array(Image.open(f"{folder_path}/{im}"))[:, :, ::-1] for im in sampled_images], [np.array(Image.open(f"{folder_path}/{im}"))[:, :, None] / 255 for im in sampled_segs]
 
         return sampled_images, sampled_segs
+    
+    
+    def rgb_to_ycbcr(self, image):
+        # Perform the matrix multiplication
+        ycbcr_image = image @ self.rgb_to_ycbcr_conversion_matrix.T + self.offset
+
+        return ycbcr_image
+
+    def ycbcr_to_rgb(self, image):
+
+
+        # Perform the matrix multiplication
+        rgb_image = (image - self.offset) @ self.ycbcr_to_rgb_conversion_matrix.T
+
+        # Clip the values to be in the range [0, 255]
+        rgb_image = np.clip(rgb_image, 0, 255)
+
+        return rgb_image
         
 
 
@@ -197,7 +230,8 @@ class InjectLargeVehicleData(BaseTransform):
                 prob = self.prob
                 sampled_images, sampled_segs = self.get_files(folder_path)
                 self.prob = prob
-                
+                if (len(sampled_images) == 0):
+                    return results
                 
             sampled_im = np.sum(np.array(sampled_images), axis=0)
             sim_images_ycbcr = np.array(Image.fromarray(sampled_im.astype(np.uint8)).convert('YCbCr'))
@@ -207,9 +241,8 @@ class InjectLargeVehicleData(BaseTransform):
                 Image.fromarray((sampled_seg * dota_np).astype(np.uint8)).convert('YCbCr')
             )
                 
-
             if self.leave_original_chroma:
-                dota_img = Image.fromarray(results['img'].astype(np.uint8))
+                dota_img = Image.fromarray(results['img'][:, :, ::-1].astype(np.uint8)) #origanally results['img'] come as BGR
                 dota_ycbcr = dota_img.convert('YCbCr')
                 sim_images_ycbcr = Image.fromarray(sim_images_ycbcr.astype(np.uint8)).convert('YCbCr')
                 d_y, d_cb, d_cr = dota_ycbcr.split()
@@ -217,9 +250,32 @@ class InjectLargeVehicleData(BaseTransform):
                 sampled_seg_image = Image.fromarray((np.concatenate([sampled_seg, sampled_seg, sampled_seg], axis=2) * 255 * self.prob).astype(np.uint8)).convert('L')  # Mask image for blending
                 blended_y_channel = Image.composite(s_y, d_y, sampled_seg_image)
                 new_ycbcr = Image.merge('YCbCr', [blended_y_channel, d_cb, d_cr])
-                new_rgb = new_ycbcr.convert('RGB')
-                new_ycbcr = Image.merge('YCbCr', [d_y, s_cb, s_cr])
-                dota_np = np.array(new_ycbcr.convert('RGB'))      
+                dota_np = np.array(new_ycbcr.convert('RGB'))[:, :, ::-1]
+
+                # sim_images_ycbcr = np.array(Image.fromarray(sampled_im.astype(np.uint8)).convert('YCbCr'))
+                # start = time.time()
+                # for i in range(1000):
+                #     dota_img = results['img'][:, :, ::-1].astype(np.float32)
+                #     relevant_part = dota_img * sampled_seg
+                #     relevant_YCbCr = self.rgb_to_ycbcr(relevant_part)
+                    
+                #     # sim_images_ycbcr = Image.fromarray(sim_images_ycbcr.astype(np.uint8))
+                #     relevant_part_sim = sim_images_ycbcr * sampled_seg
+                #     relevant_YCbCr_sim = self.rgb_to_ycbcr(relevant_part_sim)
+                    
+                #     new_yCbCr_y_relevant = relevant_YCbCr[:, :, 0] * (1 - self.prob) + \
+                #         relevant_YCbCr_sim[:, :, 0] * self.prob
+                    
+                #     new_YCbCr_relevant = \
+                #         np.concatenate([new_yCbCr_y_relevant[:, :, None], \
+                #             relevant_YCbCr[:, :, 1:]], axis=2)
+                        
+                #     new = (dota_img * (1 - sampled_seg) + self.ycbcr_to_rgb(new_YCbCr_relevant)).astype(np.uint8)
+                # end = time.time()
+                # print(f"np time - {end - start}")
+                # new = self.ycbcr_to_rgb(new_YCbCr).astype(np.uint8)
+                # new_ycbcr = Image.merge('YCbCr', [d_y, s_cb, s_cr])
+                # dota_np = np.array(new_ycbcr.convert('RGB'))      
                 
             else:
 
