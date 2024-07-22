@@ -174,12 +174,17 @@ class InjectLargeVehicleData(BaseTransform):
 
         pattern_images = re.compile(r'^-?\d+(\.\d+)?\.png$')
         matching_images = [file for file in files if re.match(pattern_images, file)]
+        matching_images.sort()
 
         pattern_segs = re.compile(r'^-?\d+(\.\d+)?\_seg.png$')
         matching_segs = [file for file in files if re.match(pattern_segs, file)]
+        matching_segs.sort()
 
         sampled_images = []
         sampled_segs = []
+        
+        if len(matching_images) != len(matching_segs):
+            return sampled_images, sampled_segs
 
         # Iterate through each path in the list
         for i in range(len(matching_images)):

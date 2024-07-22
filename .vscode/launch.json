@@ -88,7 +88,13 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/injection.py", "--device", "cuda:0", "--cfg-options", "train_dataloader.batch_size=1", "--cfg-options", "train_dataloader.dataset.pipeline.3.leave_original_chroma=True"]
+            "args": ["/mm_stuff/configs/injection.py",
+             "--device", "cuda:0",
+              "--cfg-options", "train_dataloader.batch_size=1",
+               "--cfg-options", "train_dataloader.dataset.pipeline.3.leave_original_chroma=True",
+                "--cfg-options", "train_dataloader.dataset.pipeline.3.prob=0.8",
+                "--cfg-options", "prob_exp=0.8",
+            ]
         }
 
     ]

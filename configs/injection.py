@@ -110,5 +110,5 @@ model = dict(
 # batch_size = (2 GPUs) x (4 samples per GPU) = 8
 train_dataloader = dict(batch_size=8, num_workers=8)
 
-prob = _base_['injection_prob']
-experiment_name = f'random_alpha_inject_{prob}_ycbcr_120'
+prob_exp = _base_['injection_prob']
+experiment_name = f'random_alpha_inject_{prob_exp}_ycbcr_120'
