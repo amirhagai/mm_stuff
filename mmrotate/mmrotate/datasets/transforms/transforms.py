@@ -17,6 +17,7 @@ from PIL import Image
 from torchvision.transforms import Compose, ToTensor, ColorJitter, ToPILImage
 from mmrotate.registry import TRANSFORMS
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 
 
@@ -51,7 +52,31 @@ class BboxColorJitter(BaseTransform):
         cnt = cnt.reshape((4, 2))
         rect = cv2.minAreaRect(cnt)
         return torch.tensor([rect[0][0], rect[0][1], rect[1][0], rect[1][1], np.pi * rect[2] / 180])
+    
+    def draw(self, results, prev):
+        
+        after = results['img']
+        name = results['img_id']
+        f, ax = plt.subplots(1, 3)
+        
+        ax[0].imshow(prev[:, :, ::-1])
+        ax[0].set_xticks([])
+        ax[0].set_yticks([])
+        
+        ax[1].imshow(after[:, :, ::-1])
+        ax[1].set_xticks([])
+        ax[1].set_yticks([])
+        
+        ax[2].imshow(np.clip(np.abs(results['img'].astype(np.float32) - \
+            prev.astype(np.float32)), 0, 255)[:, :, ::-1].astype(np.uint8))
+        ax[2].set_xticks([])
+        ax[2].set_yticks([])
+        
+        name_ = f"{self.brightness}_{self.contrast}_{self.saturation}_{self.hue}"
+        os.makedirs(f"/data/presentation_imgs/{name}", exist_ok=True)
 
+        plt.savefig(f"/data/presentation_imgs/{name}/{name_}.png")
+        plt.close()
 
     def transform(self, results: dict) -> dict:
     
@@ -76,7 +101,10 @@ class BboxColorJitter(BaseTransform):
             indecis = np.where(mask == 255)
             bbox_to_transform = results['img'][indecis[0], indecis[1], :].astype(np.float32) / 255.
             transformed_tensor = self.transform_im(torch.tensor(bbox_to_transform.T[:, :, None]))
+            # prev = results['img'].copy()
             results['img'][indecis[0], indecis[1], :] = (transformed_tensor[:, :, 0].T.numpy() * 255).astype(np.uint8)
+            # if len(boxes) > 10:
+            #     self.draw(results=results, prev=prev)
  
         return results
 
@@ -166,7 +194,37 @@ class InjectLargeVehicleData(BaseTransform):
                                     [1, 1.772, 0]])
 
         
+    def draw(self, results, prev):
         
+        after = results['img']
+        
+        
+        name = results['img_id']
+        f, ax = plt.subplots(1, 3)
+        
+        ax[0].imshow(prev[:, :, ::-1])
+        ax[0].set_xticks([])
+        ax[0].set_yticks([])
+        
+        ax[1].imshow(after[:, :, ::-1])
+        ax[1].set_xticks([])
+        ax[1].set_yticks([])
+        
+        ax[2].imshow(np.clip(np.abs(results['img'].astype(np.float32) - \
+            prev.astype(np.float32)), 0, 255)[:, :, ::-1].astype(np.uint8))
+        ax[2].set_xticks([])
+        ax[2].set_yticks([])
+        
+        name_ = f"injecte_{self.prob}_{self.leave_original_chroma}_{self.random_alpha_y_channel}"
+        os.makedirs(f"/data/presentation_imgs/{name}", exist_ok=True)
+        
+        Image.fromarray(after).save(f"/data/presentation_imgs/{name}/after_{name_}.png")
+        
+        Image.fromarray(prev).save(f"/data/presentation_imgs/{name}/prev_{name_}.png")
+
+        plt.savefig(f"/data/presentation_imgs/{name}/{name_}.png")
+        plt.close()        
+    
 
     def get_files(self, folder_path):
 
@@ -308,7 +366,9 @@ class InjectLargeVehicleData(BaseTransform):
             for i in range(len(sampled_images)):
                 dota_np = (1 - sampled_segs[i]) * dota_np + sampled_segs[i] * sampled_images[i]
 
+        # prev = results['img'].copy()
         results['img'] = dota_np.astype(np.uint8)
+        # self.draw(results=results, prev=prev)
         return results
 
     def __repr__(self):

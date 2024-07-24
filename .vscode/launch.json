@@ -10,35 +10,41 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/fast_test.py", "--device", "cuda:0"]
+            "args": ["/mm_stuff/configs/fast_test.py",
+             "--device", "cuda:0"]
         },{
             "name": "Python Debugger: fast_test_contrastive cuda 0",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/fast_test_contrastive.py", "--device", "cuda:0"]
+            "args": ["/mm_stuff/configs/fast_test_contrastive.py",
+             "--device", "cuda:0"]
         },{
             "name": "Python Debugger: fast_test_contrastive test",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/fast_test_contrastive.py", "/mm_stuff/work_dirs/fast_test_contrastive/epoch_71.pth", "--show-dir", "results"]
+            "args": ["/mm_stuff/configs/fast_test_contrastive.py", 
+            "/mm_stuff/work_dirs/fast_test_contrastive/epoch_71.pth",
+             "--show-dir", "results"]
         },{
             "name": "Python Debugger: fourier cuda 0",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/add_fourier_1_to_8_double_backbone.py", "--device", "cuda:0"]
+            "args": ["/mm_stuff/configs/add_fourier_1_to_8_double_backbone.py", 
+            "--device", "cuda:0"]
         },{
             "name": "Python Debugger: fourier double fusion cuda 1",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/add_fourier_1_to_8_double_fusion.py", "--device", "cuda:1"]
+            "args": ["/mm_stuff/configs/add_fourier_1_to_8_double_fusion.py", 
+            "--device", "cuda:1"]
         }
         ,{
             "name": "Python Debugger: slow grad double",
@@ -46,42 +52,54 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/add_grad_slow_double.py", "--device", "cuda:0"]
+            "args": ["/mm_stuff/configs/add_grad_slow_double.py", 
+            "--device", "cuda:0"]
         },{
             "name": "Python Debugger: fast grad double",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/add_grad_fast_double.py", "--device", "cuda:0"]
+            "args": ["/mm_stuff/configs/add_grad_fast_double.py", 
+            "--device", "cuda:0"]
         },{
             "name": "Python Debugger: contrastive cuda:0",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/contrastive_base.py", "--device", "cuda:0"]
+            "args": ["/mm_stuff/configs/contrastive_base.py",
+             "--device", "cuda:0"]
         },{
             "name": "Python Debugger: contrastive head over backbone cuda:0",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/contrastive_head_over_backbone.py", "--device", "cuda:0"]
+            "args": ["/mm_stuff/configs/contrastive_head_over_backbone.py", 
+            "--device", "cuda:0"]
         },{
             "name": "Python Debugger: color jitter prob 1 bs 1 cuda:0",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/bbox_color_jitter.py", "--device", "cuda:0", "--cfg-options", "prob=1", "--cfg-options", "train_dataloader.dataset.pipeline.3.prob=1", "--cfg-options", "train_dataloader.batch_size=1"]
+            "args": ["/mm_stuff/configs/bbox_color_jitter.py", 
+            "--device", "cuda:0",
+             "--cfg-options", "prob=1",
+              "--cfg-options", "train_dataloader.dataset.pipeline.3.prob=1", 
+              "--cfg-options", "train_dataloader.batch_size=1"]
         },{
             "name": "Python Debugger: color jitter prob 0.6 bs 1 cuda:0",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["/mm_stuff/configs/bbox_color_jitter.py", "--device", "cuda:0", "--cfg-options", "prob=1", "--cfg-options", "train_dataloader.dataset.pipeline.3.prob=0.6", "--cfg-options", "train_dataloader.batch_size=1"]
+            "args": ["/mm_stuff/configs/bbox_color_jitter.py", 
+            "--device", "cuda:0",
+             "--cfg-options", "p=0.6",
+              "--cfg-options", "train_dataloader.dataset.pipeline.3.prob=0.6",
+               "--cfg-options", "train_dataloader.batch_size=1"]
         },{
             "name": "Python Debugger: random_alpha_injection bs 1 cuda:0",
             "type": "debugpy",

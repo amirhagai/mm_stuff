@@ -621,7 +621,9 @@ def main(root_directory, rule, plot_folder_name):
             exp_df = df[df['experiment'] == exp]
             
             # Group by 'epoch' and apply the function
-            exp_df = exp_df.groupby(['epoch'], group_keys=False).apply(assign_set)
+            exp_df_2 = exp_df.groupby(['epoch'], group_keys=False).apply(assign_set).reset_index()
+
+            exp_df_3 = exp_df.groupby(['epoch'], group_keys=False).apply(assign_set)
             
             # Split into val and train DataFrames
             exp_val_df = exp_df[exp_df['set'] == 'val']
@@ -701,7 +703,8 @@ def delete_folders_with_fast_test(base_dir):
 if __name__ == "__main__":
     root_directory = "/data/work_dir"
     
-    for name in ['random_alpha_inject_ycbcr', 'full_simulation', 'standart_training', 'inject_ycbcr', 'fourier', 'extra_grads', 'contrastive', 'bbox_color_jitter']:
+    # for name in ['random_alpha_inject_ycbcr', 'full_simulation', 'standart_training', 'inject_ycbcr', 'fourier', 'extra_grads', 'contrastive', 'bbox_color_jitter']:
+    for name in ['bbox_color_jitter']:
         if name == 'inject_ycbcr':
             rule = lambda x: name in x and 'v2' not in x and 'random_alpha' not in x
         else:
