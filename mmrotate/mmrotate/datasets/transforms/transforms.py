@@ -218,9 +218,9 @@ class InjectLargeVehicleData(BaseTransform):
         name_ = f"injecte_{self.prob}_{self.leave_original_chroma}_{self.random_alpha_y_channel}"
         os.makedirs(f"/data/presentation_imgs/{name}", exist_ok=True)
         
-        Image.fromarray(after).save(f"/data/presentation_imgs/{name}/after_{name_}.png")
+        Image.fromarray(after[:, :, ::-1]).save(f"/data/presentation_imgs/{name}/after_{name_}.png")
         
-        Image.fromarray(prev).save(f"/data/presentation_imgs/{name}/prev_{name_}.png")
+        Image.fromarray(prev[:, :, ::-1]).save(f"/data/presentation_imgs/{name}/prev_{name_}.png")
 
         plt.savefig(f"/data/presentation_imgs/{name}/{name_}.png")
         plt.close()        
@@ -366,9 +366,9 @@ class InjectLargeVehicleData(BaseTransform):
             for i in range(len(sampled_images)):
                 dota_np = (1 - sampled_segs[i]) * dota_np + sampled_segs[i] * sampled_images[i]
 
-        # prev = results['img'].copy()
+        prev = results['img'].copy()
         results['img'] = dota_np.astype(np.uint8)
-        # self.draw(results=results, prev=prev)
+        self.draw(results=results, prev=prev)
         return results
 
     def __repr__(self):
