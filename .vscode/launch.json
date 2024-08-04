@@ -110,8 +110,21 @@
              "--device", "cuda:0",
               "--cfg-options", "train_dataloader.batch_size=1",
                "--cfg-options", "train_dataloader.dataset.pipeline.3.leave_original_chroma=True",
-                "--cfg-options", "train_dataloader.dataset.pipeline.3.prob=0.8",
-                "--cfg-options", "prob_exp=0.8",
+               "--cfg-options", "train_dataloader.dataset.pipeline.3.random_alpha_y_channel=True",
+                "--cfg-options", "train_dataloader.dataset.pipeline.3.prob=1",
+                "--cfg-options", "prob_exp=1",
+            ]
+        },
+        {
+            "name": "Python: 16 classes",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "/mm_stuff/configs/rotated_rtmdet_l-3x-dota.py",
+                 "/data/rotated_rtmdet_l-3x-dota-23992372.pth",
             ]
         }
 
