@@ -145,6 +145,32 @@ class DOTADataset(BaseDataset):
 
 
 @DATASETS.register_module()
+class ExtendedDOTADataset(DOTADataset):
+    """Extended version of the DOTA-v1.0 dataset to support 16 classes."""
+    
+    METAINFO = {
+        'classes': (
+            'plane', 'baseball-diamond', 'bridge', 'ground-track-field',
+            'small-vehicle', 'large-vehicle', 'ship', 'tennis-court',
+            'basketball-court', 'storage-tank', 'soccer-ball-field', 'roundabout',
+            'harbor', 'swimming-pool', 'helicopter', 'container'  # Added new class
+        ),
+        'palette': [
+            (165, 42, 42), (189, 183, 107), (0, 255, 0), (255, 0, 0),
+            (138, 43, 226), (255, 128, 0), (255, 0, 255),
+            (0, 255, 255), (255, 193, 193), (0, 51, 153),
+            (255, 250, 205), (0, 139, 139), (255, 255, 0),
+            (147, 116, 116), (0, 0, 255), (128, 0, 128)  # Added new color for the new class
+        ]
+    }
+
+    def __init__(self, **kwargs):
+        # Optionally, you can modify constructor to add new parameters or configurations specific to the extended dataset.
+        super().__init__(**kwargs)
+        # If you need to dynamically modify classes based on new input arguments, add those changes here.
+        
+        
+@DATASETS.register_module()
 class DOTAv15Dataset(DOTADataset):
     """DOTA-v1.5 dataset for detection.
 
