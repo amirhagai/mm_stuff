@@ -69,36 +69,44 @@ def test_outs(runner, copied_model):
     test_loop.runner.model.eval()
     copied_model.eval()
     outs = []
-    for idx, data_batch in enumerate(test_loop.dataloader):
-        # test_loop.run_iter(idx, data_batch)
-        with autocast(enabled=test_loop.fp16):
-            
-            d1 = test_loop.runner.model.data_preprocessor(data_batch, False)
-            d2 = copied_model.data_preprocessor(data_batch, False)
+    with torch.no_grad():
+        for idx, data_batch in enumerate(test_loop.dataloader):
+            # test_loop.run_iter(idx, data_batch)
+            with autocast(enabled=test_loop.fp16):
+                
+                # d1 = test_loop.runner.model.data_preprocessor(data_batch, False)
+                # d2 = copied_model.data_preprocessor(data_batch, False)
 
-            x = test_loop.runner.model.extract_feat(d1['inputs'])
-            outs = test_loop.runner.model.bbox_head(x)
-            
-            x2 = copied_model.extract_feat(d2['inputs'])
-            outs2 = copied_model.bbox_head(x2)
-            print((outs[0][0][:, :15, :, :] - outs2[0][0]).abs().sum())
-            print((outs[0][1][:, :15, :, :] - outs2[0][1]).abs().sum())
-            print((outs[0][2][:, :15, :, :] - outs2[0][2]).abs().sum())
-            
-            
-            batch_img_metas = [
-                data_samples.metainfo for data_samples in d1['data_samples']
-            ]
-            predictions = test_loop.runner.model.bbox_head.predict_by_feat(
-                *outs, batch_img_metas=batch_img_metas, rescale=True)
-            
-            predictions2 = copied_model.bbox_head.predict_by_feat(
-                *outs2, batch_img_metas=batch_img_metas, rescale=True)
-            
-                        
-            outputs1 = test_loop.runner.model.test_step(data_batch)
-            outputs2 = copied_model.test_step(data_batch)
-        outs.append(outputs1)
+                # x = test_loop.runner.model.extract_feat(d1['inputs'])
+                # outs = test_loop.runner.model.bbox_head(x)
+                
+                # x2 = copied_model.extract_feat(d2['inputs'])
+                # outs2 = copied_model.bbox_head(x2)
+                # print((outs[0][0][:, :15, :, :] - outs2[0][0]).abs().sum())
+                # print((outs[0][1][:, :15, :, :] - outs2[0][1]).abs().sum())
+                # print((outs[0][2][:, :15, :, :] - outs2[0][2]).abs().sum())
+                
+                
+                # batch_img_metas = [
+                #     data_samples.metainfo for data_samples in d1['data_samples']
+                # ]
+
+                # predictions = test_loop.runner.model.bbox_head.predict_by_feat(
+                #     *outs, batch_img_metas=batch_img_metas, rescale=True)
+                
+                # predictions2 = copied_model.bbox_head.predict_by_feat(
+                #     *outs2, batch_img_metas=batch_img_metas, rescale=True)
+                
+                            
+                outputs1 = test_loop.runner.model.test_step(data_batch)
+                outputs2 = copied_model.test_step(data_batch)
+                diff = (outputs2[0].pred_instances.labels != outputs1[0].pred_instances.labels).sum()
+                if diff > 0:
+                    print(diff)
+            if idx % 10 == 0 and idx > 0:
+                print(idx)
+        print("done")
+        # outs.append(outputs1)
     return outs
 
 def main():
@@ -163,6 +171,7 @@ def main():
                                ' configuration file.')
 
     cfg.resume = args.resume
+    cfg.custom_hooks = None
     # cfg.load_from = args.checkpoint
 
     # build the runner from config
@@ -177,17 +186,17 @@ def main():
     runner.train_val_loop_flag = True
     
     runner.call_hook('before_run')
-    runner.load_checkpoint(args.checkpoint)
+    runner.load_checkpoint(args.checkpoint, map_location=args.device)
     copied_model = copy.deepcopy(runner.model)
     
     new_rtm_cls = nn.ModuleList()
     for layer in runner.model.bbox_head.rtm_cls:
         # Step 2: Create a new convolutional layer with 16 output channels instead of 15
-        new_layer = nn.Conv2d(256, 16, kernel_size=(1, 1), stride=(1, 1))
+        new_layer = nn.Conv2d(256, 16, kernel_size=(1, 1), stride=(1, 1), device=args.device)
         
         # Initialize the new_layer weights with zeros or another preferred method
-        nn.init.zeros_(new_layer.weight)
-        nn.init.zeros_(new_layer.bias)
+        nn.init.normal_(new_layer.weight, mean=layer.weight.mean().item(), std=layer.weight.std().item())
+        nn.init.constant_(new_layer.bias, layer.bias.mean().item() * 1.1)
         
         # Step 3: Copy the weights and biases from the old layer to the new layer for the first 15 channels
         with torch.no_grad():
@@ -200,9 +209,12 @@ def main():
     # Step 4: Replace the old rtm_cls ModuleList with the new one
     runner.model.bbox_head.rtm_cls = new_rtm_cls
     runner.model.bbox_head.cls_out_channels = 16
-    test_outs(runner, copied_model)
+    # test_outs(runner, copied_model)
     # start training
-    model = runner.train()
+    # runner.val_loop.run()
+
+    runner.val_loop.run()
+    # model = runner.train()
     print()
 
 
