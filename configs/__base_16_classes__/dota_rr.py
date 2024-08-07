@@ -13,7 +13,7 @@ data_root = '/data/split_ss_dota/added_container'
 backend_args = None
 
 
-size = 512
+size = 1024
 train_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
     dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),

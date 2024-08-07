@@ -104,4 +104,5 @@ model = dict(
 
 # batch_size = (2 GPUs) x (4 samples per GPU) = 8
 train_dataloader = dict(batch_size=8, num_workers=8)
+test_dataloader = dict(batch_size=1, num_workers=1)
 experiment_name = 'normal_train_512_size'

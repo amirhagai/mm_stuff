@@ -125,6 +125,7 @@
             "args": [
                 "/mm_stuff/configs/rotated_rtmdet_l-3x-dota.py",
                  "/data/rotated_rtmdet_l-3x-dota-23992372.pth",
+                 "--device", "cuda:1"
             ]
         }
 
