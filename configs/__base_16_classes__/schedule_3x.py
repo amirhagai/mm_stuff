@@ -1,6 +1,6 @@
-max_epochs =  120
+max_epochs =  36
 base_lr = 0.004 / 16
-interval = 5
+interval = 3
 
 train_cfg = dict(
     type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=interval)
