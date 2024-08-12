@@ -344,17 +344,18 @@ def main():
     # start training
     # runner.val_loop.run()
 
-    # runner.val_loop.run()
-    i = 0
-    for name, param in runner.model.named_parameters():
-        param.param_name = name
-        print(name);i+=1
-    print(i)
+    runner.val_loop.run()
+    # i = 0
+    # for name, param in runner.model.named_parameters():
+    #     param.param_name = name
+    #     print(name);i+=1
+    # print(i)
     
     
     # runner.optim_wrapper.step = new_step.__get__(runner.optim_wrapper, runner.optim_wrapper.__class__) 
     
     # model = runner.train()
+    runner.train_val_loop_flag = True
     train_model(runner, optimization_option=args.optimization_option)
     print()
 
