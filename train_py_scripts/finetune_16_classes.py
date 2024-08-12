@@ -346,8 +346,8 @@ def main():
 
     runner.val_loop.run()
     # i = 0
-    # for name, param in runner.model.named_parameters():
-    #     param.param_name = name
+    for name, param in runner.model.named_parameters():
+        param.param_name = name
     #     print(name);i+=1
     # print(i)
     
