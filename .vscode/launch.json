@@ -128,6 +128,20 @@
                  "1",
                  "--device", "cuda:1"
             ]
+        },
+        {
+            "name": "Python: 16 classes new head",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "/mm_stuff/configs/rotated_rtmdet_l-3x-dota_16_classes_new_head.py",
+                 "/data/rotated_rtmdet_l-3x-dota-23992372.pth",
+                 "1",
+                 "--device", "cuda:1"
+            ]
         }
 
     ]

@@ -314,32 +314,33 @@ def main():
     # runner._hooks[1].ema_model = copied_model
     
     
-    new_rtm_cls = nn.ModuleList()
-    for layer in runner.model.bbox_head.rtm_cls:
-        # Step 2: Create a new convolutional layer with 16 output channels instead of 15
-        new_layer = nn.Conv2d(256, 16, kernel_size=(1, 1), stride=(1, 1), device=args.device)
-        
-        # Initialize the new_layer weights with zeros or another preferred method
-        nn.init.normal_(new_layer.weight, mean=layer.weight.mean().item(), std=layer.weight.std().item())
-        nn.init.constant_(new_layer.bias, layer.bias.mean().item() * 1.1)
-        
-        # Step 3: Copy the weights and biases from the old layer to the new layer for the first 15 channels
-        with torch.no_grad():
-            new_layer.weight[:15, :, :, :] = layer.weight.clone()
-            new_layer.bias[:15] = layer.bias.clone()
+    if runner.model.bbox_head.rtm_cls[0].weight.shape[0] == 15:
+        new_rtm_cls = nn.ModuleList()
+        for layer in runner.model.bbox_head.rtm_cls:
+            # Step 2: Create a new convolutional layer with 16 output channels instead of 15
+            new_layer = nn.Conv2d(256, 16, kernel_size=(1, 1), stride=(1, 1), device=args.device)
+            
+            # Initialize the new_layer weights with zeros or another preferred method
+            nn.init.normal_(new_layer.weight, mean=layer.weight.mean().item(), std=layer.weight.std().item())
+            nn.init.constant_(new_layer.bias, layer.bias.mean().item() * 1.1)
+            
+            # Step 3: Copy the weights and biases from the old layer to the new layer for the first 15 channels
+            with torch.no_grad():
+                new_layer.weight[:15, :, :, :] = layer.weight.clone()
+                new_layer.bias[:15] = layer.bias.clone()
 
-        # Add the newly created layer to the new ModuleList
-        new_rtm_cls.append(new_layer)
+            # Add the newly created layer to the new ModuleList
+            new_rtm_cls.append(new_layer)
+            
+        # copied_model = copy.deepcopy(runner.model)
+
+
+        # Step 4: Replace the old rtm_cls ModuleList with the new one
+        runner.model.bbox_head.rtm_cls = new_rtm_cls
+        runner.model.bbox_head.cls_out_channels = 16
         
-    # copied_model = copy.deepcopy(runner.model)
-
-
-    # Step 4: Replace the old rtm_cls ModuleList with the new one
-    runner.model.bbox_head.rtm_cls = new_rtm_cls
-    runner.model.bbox_head.cls_out_channels = 16
-    
-    runner._hooks[1].ema_model = MODELS.build(
-        runner._hooks[1].ema_cfg, default_args=dict(model=runner.model))
+        runner._hooks[1].ema_model = MODELS.build(
+            runner._hooks[1].ema_cfg, default_args=dict(model=runner.model))
     # test_outs(runner, copied_model)
     # start training
     # runner.val_loop.run()
