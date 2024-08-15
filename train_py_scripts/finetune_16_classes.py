@@ -181,7 +181,7 @@ def train_model(runner, optimization_option) -> nn.Module:
 
     if runner._val_loop is not None:
 
-        loop = runner._val_loop 
+        loop = {'type': 'ValLoop'}
         runner._val_loop = runner.build_val_loop(
             runner._val_loop)  # type: ignore
         if runner.train_val_loop_flag:
