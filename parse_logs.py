@@ -464,6 +464,7 @@ def log_to_df(log_files, metrics):
         [],
         [],
         [],
+        []
     ]
 
     for filepath, exp_name in log_files.items():
@@ -492,7 +493,7 @@ def log_to_df(log_files, metrics):
 
     all_data = pd.concat(all_data, ignore_index=True)
     data_all_classes = [
-        pd.concat(data_all_classes[i], ignore_index=True) for i in range(15)
+        pd.concat(data_all_classes[i], ignore_index=True) for i in range(16)
     ]
 
     return data_all_classes, precision_in_met
@@ -593,6 +594,7 @@ def main(root_directory, rule, plot_folder_name):
         "storage-tank",
         "swimming-pool",
         "tennis-court",
+        "container"
     ]
 
     keys_dict = {int(i): keys[i] for i in range(len(keys))}
@@ -605,7 +607,7 @@ def main(root_directory, rule, plot_folder_name):
     if not precision_in_met:
         metrics = ["mAP", "ap", "recall"]
     for key in keys_dict.keys():
-        if keys[key] != "large-vehicle":
+        if keys[key] != "container":
             continue
 
         df = data_all_classes[key].drop("class", axis=1)
@@ -626,8 +628,8 @@ def main(root_directory, rule, plot_folder_name):
             exp_df_3 = exp_df.groupby(['epoch'], group_keys=False).apply(assign_set)
             
             # Split into val and train DataFrames
-            exp_val_df = exp_df[exp_df['set'] == 'val']
-            exp_train_df = exp_df[exp_df['set'] == 'train']
+            exp_val_df = exp_df[exp_df_3['set'] == 'val']
+            exp_train_df = exp_df[exp_df_3['set'] == 'train']
             
             # Append to the respective master DataFrames
             val_df = pd.concat([val_df, exp_val_df], ignore_index=True)
@@ -701,14 +703,15 @@ def delete_folders_with_fast_test(base_dir):
 
 
 if __name__ == "__main__":
-    root_directory = "/data/work_dir"
+    root_directory = "/data/split_ss_dota/finetune_logs"
     
     # for name in ['random_alpha_inject_ycbcr', 'full_simulation', 'standart_training', 'inject_ycbcr', 'fourier', 'extra_grads', 'contrastive', 'bbox_color_jitter']:
-    for name in ['bbox_color_jitter']:
-        if name == 'inject_ycbcr':
-            rule = lambda x: name in x and 'v2' not in x and 'random_alpha' not in x
-        else:
-            rule = lambda x: name in x and 'v2' not in x 
+    for name in ['finetune_logs']:
+        # if name == 'inject_ycbcr':
+        #     rule = lambda x: name in x and 'v2' not in x and 'random_alpha' not in x
+        # else:
+        #     rule = lambda x: name in x and 'v2' not in x 
+        rule = lambda x: name in x
         main(root_directory, rule=rule, plot_folder_name=f'/data/work_dir/plots/{name}')
         print(f"done - {name}", end='\n\n')
     
